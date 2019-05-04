@@ -6,6 +6,7 @@ import math
 import time
 import gc
 
+import Config
 # from generator import compile_cmd  # 'gcc -fno-stack-protector -no-pie -O0 -w -m32 '
 # from generator import runtime_dir  # './tmp/src_code/runtime/'
 
@@ -77,11 +78,12 @@ class CFGInfo:
 
     func_1_size = 0  # the number of lines
 
-    compile_cmd = 'gcc -fno-stack-protector -no-pie -O0 -w -m32 '
-    running_directory = './tmp/src_code/'
-    runtime_dir = ' -I /home/fuzz/Documents/Fuzzer_3_17/tmp/src_code/runtime/ '
-    gcc_cfg_option = ' -fdump-tree-cfg '
-    cfg_suffix = '.011t.cfg'
+    compile_cmd = Config.compile_cmd
+    # running_directory = Config.running_directory  # not used?
+    # runtime_dir = ' -I /home/fuzz/Documents/Fuzzer_3_17/tmp/src_code/runtime/ '
+    runtime_dir = ' -I ' + Config.runtime_dir
+    gcc_cfg_option = Config.gcc_cfg_option
+    cfg_suffix = Config.cfg_suffix
 
     file_path = ''
 
@@ -166,7 +168,8 @@ class CFGInfo:
         f = open(file_path)
         self.cfg_txt = f.read()
         f.close()
-        pos = self.cfg_txt.find('func_1 ()')
+        func_name = Config.replaced_func_name
+        pos = self.cfg_txt.find(func_name+' ()')
         if pos == -1:
             return
         self.func_1_txt = self.cfg_txt[pos:]

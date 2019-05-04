@@ -2,7 +2,9 @@ import os
 from threading import Timer
 from subprocess import Popen, PIPE, getstatusoutput
 
-timeout_sec = 2
+import Config
+
+timeout_sec = Config.timeout_sec
 
 
 def run_single_prog(prog_path):
@@ -22,6 +24,9 @@ def compare_two_prog(prog1, prog2, result_dir):
 
     stdout1, stderr1 = run_single_prog(prog1)
     stdout2, stderr2 = run_single_prog(prog2)
+
+    if len(stdout1) > 100 or len(stdout1) > 100:
+        return -1, ''
 
     if stdout1 != stdout2:
         result_log = os.path.join(result_dir, 'result_log.txt')

@@ -13,6 +13,7 @@ from CFG_measurer import AcceptProb, CFGInfo, Distance
 from ENV_Profiler import Profiler, ENV, Synthesizer
 from ContextTable import ContextTable
 import Config
+import modifier
 
 
 class StmtWithContext:
@@ -152,20 +153,17 @@ class StmtWithContext:
         used_list = []
         list_old = list_old_str.split(',')
 
-        # sometimes there will be wrong data in database?
-        if len(list_old) > len(list_current)-list_current.count('{')-len(self.context_table.const_var_name_list):
-            print('Some thing wrong with this data')
-            print('list_old_str:', list_old_str)
-            exit(-1)
-
+        random.shuffle(list_current)
         for name in list_old:
-            # choose a new name
-            new_name = random.choice(list_current)
-            while new_name in used_list or \
-                    new_name == '{' or \
-                    new_name in self.context_table.const_var_name_list:
-                new_name = random.choice(list_current)
-            used_list.append(new_name)
+            # choose a new name from <list_current>
+            for new_name in list_current:
+                if new_name in used_list or new_name == '{' or new_name in self.context_table.const_var_name_list:
+                    continue
+                else:
+                    used_list.append(new_name)
+                    break
+            if new_name == list_current[-1] and (new_name == '{' or new_name in self.context_table.const_var_name_list):
+                new_name = used_list[0]
             # for debug info
             # print('replace', name, 'with', new_name)
             # then replace old name with new name
@@ -227,7 +225,7 @@ class StmtWithContext:
 class EMIGenerator:
 
     gcc_cmd = "gcc -fno-stack-protector -no-pie -O0 -m32 --coverage "
-    include_csmith_runtime = " -I /home/fuzz/Documents/Fuzzer_3_17/tmp/src_code/runtime/ "
+    include_csmith_runtime = " -I " + Config.runtime_dir
     gcov_cmd = "gcov -m "
 
     timeout_sec = 3
@@ -257,6 +255,7 @@ class EMIGenerator:
             self.cov_code_list = []
             self.SWC = StmtWithContext()
             self.profiler = Profiler()
+            self.delete_files_list = []
 
     # @staticmethod
     def flip_coin(self, which_type=1):
@@ -768,7 +767,7 @@ class EMIGenerator:
             # turn to next line
             index += 1
         # here we get a variant
-        return variant_txt[:-2]
+        return variant_txt[:-2]  # remove redundant \n at the end
 
 
 class EMIWrapper:
@@ -800,6 +799,7 @@ class EMIWrapper:
             if sta != 0:
                 return sta, ''
             self.last_variant_txt = self.emi.gen_variant()
+            self.last_variant_txt = modifier.check_for_printf(self.last_variant_txt)
             return 0, self.last_variant_txt
 
         flag = False
@@ -817,9 +817,9 @@ class EMIWrapper:
             if sta != 0:
                 return sta, ''
             self.new_variant_txt = self.emi.gen_variant()
+            self.new_variant_txt = modifier.check_for_printf(self.new_variant_txt)
 
             # temporarily store <variant_txt>, to get their CFG info
-
             path2 = './new_variant_txt.tmp.c'
             self.write_to_file(path2, self.new_variant_txt)
 

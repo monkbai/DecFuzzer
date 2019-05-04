@@ -8,9 +8,10 @@ import modifier
 import checker
 import replacer
 import EMI_generator
+import Config
 # from CFG_measurer import Distance
 
-
+# wasted
 def fuzz_single_file(file_path):
     i = file_path.rfind('.')
     if i != -1:
@@ -32,7 +33,7 @@ def fuzz_single_file(file_path):
     generator.batch_recompile(outputDir)
     checker.batch_compare(outputDir)
 
-
+# wasted
 def run_simple_fuzzing(running_dir):
     files = os.listdir(running_dir)
     files.sort()
@@ -49,13 +50,14 @@ def run_simple_fuzzing(running_dir):
 
 
 file_count = 0
+EMI_count = 0
 total_real_time = 0
 total_user_time = 0
 total_sys_time = 0
 
 
 def get_config(config_file):
-    global file_count, total_real_time, total_user_time, total_sys_time
+    global file_count, EMI_count, total_real_time, total_user_time, total_sys_time
     isExists = os.path.exists(config_file)
     if not isExists:
         return
@@ -66,13 +68,15 @@ def get_config(config_file):
         return
     f.close()
     pos = conf_txt.find('file_count: ')
-    if pos == -1:
-        return
-    count_txt = conf_txt[pos:]
-    count_txt = count_txt[:count_txt.find('\n')]
-    count_txt = count_txt.replace('file_count: ', '').strip(' \n')
-    file_count = int(count_txt)
+    if pos != -1:
+        count_txt = conf_txt[pos:]
+        count_txt = count_txt[:count_txt.find('\n')]
+        count_txt = count_txt.replace('file_count: ', '').strip(' \n')
+        file_count = int(count_txt)
 
+    if conf_txt.find('EMI_count: ') != -1:
+        emi_count_txt = conf_txt[conf_txt.find('EMI_count: ')+11:].split('\n')[0].strip(' \n')
+        EMI_count = int(emi_count_txt)
     if conf_txt.find('total_real_time: ') != -1:
         real_txt = conf_txt[conf_txt.find('total_real_time: ')+17:].split('\n')[0].strip(' \n')
         total_real_time = float(real_txt)
@@ -85,9 +89,10 @@ def get_config(config_file):
 
 
 def set_config(config_file):
-    global file_count
+    global file_count, EMI_count, total_real_time, total_user_time, total_sys_time
     f = open(config_file, 'w')
     f.write('file_count: ' + str(file_count) + '\n')
+    f.write('EMI_count: ' + str(EMI_count) + '\n')
     f.write('total_real_time: ' + str(total_real_time) + '\n')
     f.write('total_user_time: ' + str(total_user_time) + '\n')
     f.write('total_sys_time: ' + str(total_sys_time) + '\n')
@@ -100,6 +105,7 @@ def copy_file(src, dst):
 
 
 # This function is a little dangerous
+# WASTED
 def remove_all_file(directory):
     """remove all files except .txt files in this directory"""
     rm_cmd = "rm `ls | grep -v .txt`"
@@ -127,6 +133,9 @@ def remove_files(file_path, modified_file):
     remove_file(modified_file[:-2] + '_new_nou')  # maybe
 
 
+''' test_singele_random_file() was used to test JEB3 (generate a file then test the file, one by one) 
+    it's in a mess, maybe I should rewrite it sometime
+'''
 def test_single_random_file(out_dir, the_name):
     global file_count, total_real_time, total_user_time, total_sys_time
 
@@ -332,6 +341,141 @@ def test_single_random_file(out_dir, the_name):
     remove_files(file_path, modified_file)
 
 
+def test_single_file(file_path, current_dir, EMI_dir='', mutation=1):
+    global file_count, EMI_count, total_real_time, total_user_time, total_sys_time
+    err_dir = os.path.join(current_dir, 'error/')
+    result_dir = os.path.join(current_dir, 'result/')
+    # Step 1: compile
+    status, output = generator.compile_single_file(file_path)
+    if status != 0:
+        # copy their source code to error directory
+        copy_file(file_path, err_dir)
+        return
+
+    # Step 2: decompile
+    status, real_time, user_time, sys_time = generator.decompile_single_file(file_path[:-2])
+    total_real_time += real_time
+    total_user_time += user_time
+    total_sys_time += sys_time
+    file_count += 1
+
+    if status != 0:
+        copy_file(file_path, err_dir)
+        return
+
+    # Step 3: recompile
+    if Config.JEB3_test:
+        decompiled_file_name = file_path[:-2] + Config.JEB3_suffix  # '_JEB3.c'
+    elif Config.RetDec_test:
+        decompiled_file_name = file_path[:-2] + Config.RetDec_suffix  # '_retdec.c'
+    status, output = generator.recompile_single_file(file_path,
+                                                     decompiled_file_name,
+                                                     func_name=Config.replaced_func_name,  # func_1
+                                                     keep_func_decl_unchanged=1,
+                                                     try_second_time=0)
+    if status != 0:
+        copy_file(file_path, err_dir)
+        copy_file(decompiled_file_name, err_dir)
+        # remove_file(file_path[:-2])
+        # remove_file(decompiled_file_name)
+
+        error_log = os.path.join(err_dir, 'error_log.txt')
+        f = open(error_log, 'a')
+        f.write(output + '\n\n')
+        f.close()
+        return
+
+    # Step 4: compare
+    status, output = checker.compare_two_prog(file_path[:-2],
+                                              file_path[:-2] + '_new',
+                                              result_dir)
+
+    # Step 5(may be skipped): EMI mutation
+    if status == 0 and mutation != 0:
+        # information about code length
+        f = open(file_path)
+        original_code = f.read()
+        f.close()
+        f = open(file_path[:-2] + '_new.c')
+        synthesized_code = f.read()
+        f.close()
+        start1, end1 = replacer.find_fun_pos_with_name(original_code, Config.replaced_func_name)
+        start2, end2 = replacer.find_fun_pos_with_name(synthesized_code, Config.replaced_func_name)
+        print('original    function length:', str(end1 - start1))
+        print('synthesized function length:', str(end2 - start2))
+
+        if ((end1 - start1) - (end2 - start2)) > 1000:
+            number_of_var = ((end1 - start1) - (end2 - start2)) / 400
+        else:
+            number_of_var = 0
+        # For efficiency, reduce some big programs which may need a HUGE time to decompile
+        number_of_var = min(30, number_of_var)
+        if ((end1 - start1) - (end2 - start2)) > 12000:
+            number_of_var -= (((end1 - start1) - (end2 - start2)) - 12000) / 400
+
+        generate_emi_variants(number_of_var, file_path, EMI_dir)
+
+    # Step 6: remove redundant files
+    pass
+
+
+def generate_emi_variants(number_of_var, file_path, emi_dir):
+    global EMI_count
+    if number_of_var > 0:
+        emi = EMI_generator.EMIWrapper(file_path)
+
+        print('about %d variants will be generated, they are:' % int(number_of_var))
+        for i in range(int(number_of_var)):
+            status, variant_txt = emi.gen_a_new_variant()
+            if status == -1:
+                break
+            if status != 0:
+                continue
+
+            variant_name = str(EMI_count) + '.c'
+            EMI_count += 1
+            variant_path = os.path.join(emi_dir, variant_name)
+            f = open(variant_path, 'w')
+            if f:
+                f.write(variant_txt)
+                f.close()
+            print(variant_path, ' is generated')
+
+            # try to avoid redundant variants, too
+            if emi.AP.dis_new == emi.AP.dis_old:
+                print('variant has the same distance as old one, break')
+                print('dis_new', str(emi.AP.dis_new), 'dis_old', str(emi.AP.dis_old))
+                break
+            if emi.AP.dis_new <= emi.AP.dis_old - 3:
+                print(str(emi.AP.dis_new), '<=', str(emi.AP.dis_old), '- 3, break')
+                break
+
+
+def test_batch_csmith_files(current_files_dir, EMI_variant_dir=''):
+    """ First : test all csmith files in <csmith_files_dir> one by one
+        during the test, if the recompiled program has the same output with original program
+        then mutate this csmith file, put generated EMI variants into <EMI_variant_dir>
+
+        Second : test all EMI variatns in <EMI_variant_dir>
+    """
+    global file_count
+    config_file = os.path.join(current_files_dir, 'config_txt')
+    get_config(config_file)
+    while True:
+        print('\n', str(file_count)+'.c')
+        file_path = os.path.join(current_files_dir, str(file_count)+'.c')
+        is_exist = os.path.exists(file_path)
+        if not is_exist:
+            break
+        if EMI_variant_dir == '':
+            mutation = 0
+        else:
+            mutation = 1
+
+        test_single_file(file_path, current_files_dir, EMI_variant_dir, mutation)
+        set_config(config_file)
+
+
 if __name__ == '__main__':
     # test
     '''
@@ -344,8 +488,16 @@ if __name__ == '__main__':
     '''
     # run_simple_fuzzing('./test/')
 
+    '''
+    # test JEB3
     get_config(config_file='./tmp/src_code/config_txt')
     for i in range(2000-62):
         print('\nfile %d: ' % file_count)
         test_single_random_file(out_dir='./tmp/src_code', the_name='csmith_test_')
         set_config(config_file='./tmp/src_code/config_txt')
+    '''
+
+    csmith_dir = './tmp_retdec_test/csmith_files'
+    emi_dir = './tmp_retdec_test/emi_files'
+    # test_batch_csmith_files(csmith_dir, emi_dir)
+    test_batch_csmith_files(emi_dir)

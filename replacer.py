@@ -1,5 +1,7 @@
 import re
 import modifier
+import Config
+
 type_reg_exp = r"(void|int|char|short|long|int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t)"
 id_reg_exp = r"([A-Za-z_]+[A-Za-z_0-9]*)"
 # the regular expression used to match parameters
@@ -86,8 +88,15 @@ def find_fun_pos_with_name(txt='', func_name=''):
 
 
 def replace_function(source_code, decompiled_code, func_name, keep_func_decl_unchange = 0):
-    decompiled_code = modifier.JEB3_modifier(decompiled_code)
+    # Step A: pre-process
+    if Config.JEB3_test:
+        decompiled_code = modifier.JEB3_modifier_before(decompiled_code)
+    elif Config.RetDec_test:
+        decompiled_code = modifier.RetDec_modifier_before(decompiled_code)
+    elif Config.IDA_test:
+        pass
 
+    # Step B: get decompiled func_1 code
     m1 = find_fun_with_name(source_code, func_name)
     # print(source_code[m1.end() - 1])
     if source_code[m1.end() - 1] == '{':
@@ -101,15 +110,16 @@ def replace_function(source_code, decompiled_code, func_name, keep_func_decl_unc
     else:
         main_fun = decompiled_code[m2.end()-1:end_pos2]
 
+    # Step C: make decompiled func_1 code compilable
     # main_fun = JEB3_modifier(main_fun)
-    main_fun = modifier.modify_std_fun_call(main_fun)
-    main_fun = modifier.modify_loc_label(main_fun)
-    main_fun = modifier.delete_lines(main_fun, '__x86.get_pc_thunk')
-    main_fun = modifier.delete_lines(main_fun, 'jump')
-    main_fun = modifier.delete_lines(main_fun, 'param')  # func_1 has no parameter
-    main_fun = modifier.modify_shift_symbol(main_fun)
-    main_fun = modifier.modify_lvalue_cast(main_fun)
+    if Config.JEB3_test:
+        main_fun = modifier.JEB3_modifier_after(main_fun)
+    elif Config.RetDec_test:
+        main_fun = modifier.RetDec_modifier_after(main_fun)
+    elif Config.IDA_test:
+        pass
 
+    # Step D: replace
     if keep_func_decl_unchange == 0:
         new_code = source_code[0:m1.start()] + main_fun + source_code[end_pos1:]
     else:

@@ -60,8 +60,8 @@ class Profiler:
         3. compile and run instrumented program
         4. collect all information and generate ENVs for every selected stmts
     """
-    gcc_cmd = "gcc -fno-stack-protector -no-pie -O0 -m32 "
-    include_csmith_runtime = " -I /home/fuzz/Documents/Fuzzer_3_17/tmp/src_code/runtime/ "
+    gcc_cmd = Config.compile_cmd
+    include_csmith_runtime = " -I " + Config.runtime_dir
 
     cov_txt = ''
     source_code_txt = ''
@@ -78,7 +78,7 @@ class Profiler:
             self.cov_txt = cov_txt
         self.cov_code_list = []
         self.env_list = []
-        self.timeout_sec = 2
+        self.timeout_sec = Config.timeout_sec
 
     def __run_single_prog(self, prog_path):
         proc = subprocess.Popen(prog_path,
@@ -93,7 +93,7 @@ class Profiler:
         return stdout, stderr
 
     def get_pos_of_func1(self):
-        start, end = replacer.find_fun_pos_with_name(self.source_code_txt, 'func_1')
+        start, end = replacer.find_fun_pos_with_name(self.source_code_txt, Config.replaced_func_name)
         start_line_num = self.source_code_txt[:start].count('\n') + 1
         end_line_num = self.source_code_txt[:end].count('\n')
         return start_line_num, end_line_num

@@ -1,4 +1,6 @@
 from ctypes import *
+
+
 class ContextTable:
     context_stack = ['']
 

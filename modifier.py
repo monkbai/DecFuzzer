@@ -208,159 +208,247 @@ def line_end(txt, pos):
     return pos
 
 
-def delete_tmp(txt=''):
-    """delete lines with $tmp var (this variable seems useless, and is used incorrectly )"""
-    pos = txt.find('$tmp')
-    while pos != -1:
-        beg_pos = line_begin(txt, pos)
-        end_pos = line_end(txt, pos)
-        txt = txt[0:beg_pos] + txt[end_pos:]
+class JEB3Modifier:
+    @staticmethod
+    def delete_tmp(txt=''):
+        """delete lines with $tmp var (this variable seems useless, and is used incorrectly )"""
         pos = txt.find('$tmp')
-    return txt
+        while pos != -1:
+            beg_pos = line_begin(txt, pos)
+            end_pos = line_end(txt, pos)
+            txt = txt[0:beg_pos] + txt[end_pos:]
+            pos = txt.find('$tmp')
+        return txt
 
+    @staticmethod
+    def modify_reg_var_name(txt):
+        """some variables stored in registers are named with '$' prefix
+           this function modify $ to _
+        """
+        reg_exp = r"\$[a-z]+"
+        pattern = re.compile(reg_exp)
+        matches = pattern.finditer(txt)
+        new_txt = txt
+        for m in matches:
+            print(m.group())
+            pos = m.start()
+            if txt[pos]=='$':
+                new_txt = new_txt[:pos]+'_'+new_txt[pos+1:]
+        return new_txt
 
-def delete_lines(txt='', mark=''):
-    pos = txt.find(mark)
-    while pos != -1:
-        beg_pos = line_begin(txt, pos)
-        end_pos = line_end(txt, pos)
-        txt = txt[0:beg_pos] + txt[end_pos:]
+    @staticmethod
+    def delete_lines(txt='', mark=''):
         pos = txt.find(mark)
+        while pos != -1:
+            beg_pos = line_begin(txt, pos)
+            end_pos = line_end(txt, pos)
+            txt = txt[0:beg_pos] + txt[end_pos:]
+            pos = txt.find(mark)
+        return txt
+
+    @staticmethod
+    # this function maybe useless, JEB3 never recognizes function parameters correctly
+    def modify_std_fun_call(txt):
+        """ strip the '_ptr_' prefix from std function names
+        """
+        var_reg_exp = r"[*&]{0,1}([A-Za-z_]+[A-Za-z_0-9]*)"
+        id_reg_exp = r"([A-Za-z_]+[A-Za-z_0-9]*)"
+        reg_exp = (r"_ptr_"
+                   +id_reg_exp+
+                   r"\(.*\);"  # To Be Improved
+                   )
+        pattern = re.compile(reg_exp)
+        matches = pattern.finditer(txt)
+        new_txt = txt
+        for m in matches:
+            if __name__ == '__main__':
+                print(m.group())
+            pos = m.start()
+            if txt[pos:pos+5]=='_ptr_':
+                new_txt = new_txt[:pos]+new_txt[pos+5:]
+        return new_txt
+
+    @staticmethod
+    def modify_loc_label(txt):
+        """add a semicolon at the end of a local label
+           e.g., loc_8048509:;
+        """
+        reg_exp = r"loc_[A-Fa-f0-9]{7,8}:"
+        pattern = re.compile(reg_exp)
+        matches = pattern.finditer(txt)
+        new_txt = ''
+        pos1 = 0
+        pos2 = 0
+        for m in matches:
+            if __name__ == '__main__':
+                print(m.group())
+            pos1 = pos2
+            pos2 = m.end()
+            start_pos = m.start()
+
+            new_txt += txt[pos1:start_pos]
+            this_stmt = m.group()
+            this_stmt = this_stmt+';'
+            new_txt += this_stmt
+        new_txt += txt[pos2:]
+        return new_txt
+
+    @staticmethod
+    def modify_shift_symbol(txt=''):
+        while txt.find('>>>>') != -1:
+            txt = txt.replace('>>>>', ">>")
+        while txt.find('>>>') != -1:
+            txt = txt.replace('>>>', ">>")
+        while txt.find('<<<<') != -1:
+            txt = txt.replace('<<<<', "<<")
+        while txt.find('<<<<') != -1:
+            txt = txt.replace('<<<<', "<<")
+        return txt
+
+    @staticmethod
+    def modify_lvalue_cast(txt=''):
+        """ used to handle error like this:
+
+        error: lvalue required as left operand of assignment
+             (unsigned char)v45 = (unsigned char)result;
+
+            just remove (unsigned char) at left
+        """
+        reg_exp = r"\(.*\)[a-z][_a-z0-9]+ = .*;"
+        pattern = re.compile(reg_exp)
+        matches = pattern.finditer(txt)
+        new_txt = ''
+        pos1 = 0
+        pos2 = 0
+        for m in matches:
+            if __name__ == '__main__':
+                print(m.group())
+            pos1 = pos2
+            pos2 = m.end()
+            start_pos = m.start()
+
+            new_txt += txt[pos1:start_pos]
+            this_stmt = m.group()
+            p1 = this_stmt.find('(')
+            p2 = this_stmt.find(')')
+            this_stmt = this_stmt[:p1] + this_stmt[p2+1:]
+            new_txt += this_stmt
+        new_txt += txt[pos2:]
+        return new_txt
+
+    @staticmethod
+    def modify_unsigned_ijk(txt=''):
+        reg_exp = r"unsigned .* [ijk][^a-z]*;"  # find unsigned i,j and k
+        pattern = re.compile(reg_exp)
+        matches = pattern.finditer(txt)
+        new_txt = ''
+        pos1 = 0
+        pos2 = 0
+        for m in matches:
+            if __name__ == '__main__':
+                print(m.group())
+            pos1 = pos2
+            pos2 = m.end()
+            start_pos = m.start()
+
+            new_txt += txt[pos1:start_pos]
+            this_stmt = m.group()
+            this_stmt = this_stmt.replace('unsigned ', '')
+            new_txt += this_stmt
+        new_txt += txt[pos2:]
+        return new_txt
+
+
+class RetDecModifier:
+
+    @staticmethod
+    def delete_lines(txt='', mark=''):
+        pos = txt.find(mark)
+        while pos != -1:
+            beg_pos = line_begin(txt, pos)
+            end_pos = line_end(txt, pos)
+            txt = txt[0:beg_pos] + txt[end_pos:]
+            pos = txt.find(mark)
+        return txt
+
+    @staticmethod
+    def add_global_var_decl(txt=''):
+        """ add global vars into main function
+            these global vars(e.g., g1, g2, ...) may be useless
+            they are kept just for compilability
+        """
+        # Step A: find global variables declarations
+        pos = txt.find('// --------------------- Global Variables ---------------------')
+        if pos == -1:
+            return txt
+
+        g_var_txt = txt[pos:]
+        pos = g_var_txt.find('// ------------------------ Functions -------------------------')
+        if pos == -1:
+            return txt
+
+        g_var_txt = g_var_txt[:pos]
+
+        # Step B: find out function func_1
+        func_1_pos = txt.find('func_1(void) {', pos)
+        if func_1_pos == -1:
+            return txt
+
+        func_begin_pos = txt.find('\n', func_1_pos)
+        if func_begin_pos == -1:
+            return
+
+        new_txt = txt[:func_begin_pos + 1] + g_var_txt + txt[func_begin_pos + 1:]
+
+        return new_txt
+
+
+def JEB3_modifier_before(txt):
+    txt = JEB3Modifier.delete_tmp(txt)
+    txt = JEB3Modifier.modify_reg_var_name(txt)
     return txt
 
 
-def modify_reg_var_name(txt):
-    """some variables stored in registers are named with '$' prefix
-       this function modify $ to _
+def JEB3_modifier_after(main_fun):
+    main_fun = JEB3Modifier.modify_std_fun_call(main_fun)
+    main_fun = JEB3Modifier.modify_loc_label(main_fun)
+    main_fun = JEB3Modifier.delete_lines(main_fun, '__x86.get_pc_thunk')
+    main_fun = JEB3Modifier.delete_lines(main_fun, 'jump')
+    main_fun = JEB3Modifier.delete_lines(main_fun, 'param')  # func_1 has no parameter
+    main_fun = JEB3Modifier.modify_shift_symbol(main_fun)
+    main_fun = JEB3Modifier.modify_lvalue_cast(main_fun)
+    return main_fun
+
+
+def RetDec_modifier_before(txt):
+    new_txt = RetDecModifier.add_global_var_decl(txt)
+    return new_txt
+
+
+def RetDec_modifier_after(main_func):
+    main_func = RetDecModifier.delete_lines(main_func, '__x86_get_pc_thunk')
+    return main_func
+
+
+# used in EMI_generator: gen_a_new_variant
+def check_for_printf(txt):
+    """ My mistake
+        after implementing Live Code Mutation, new generated CSmith files will be modified to add a packed_printf() func
+        but old csmith files do not have such a function
+        This function are used to add packed_printf() function in old csmith files.
     """
-    reg_exp = r"\$[a-z]+"
-    pattern = re.compile(reg_exp)
-    matches = pattern.finditer(txt)
-    new_txt = txt
-    for m in matches:
-        print(m.group())
-        pos = m.start()
-        if txt[pos]=='$':
-            new_txt = new_txt[:pos]+'_'+new_txt[pos+1:]
+    if txt.find('static void packed_printf(int d)') != -1:
+        return txt
+
+    print_func = 'static void packed_printf(int d)\n'
+    print_func += '{\n'
+    print_func += '    printf("%d\\n", d);\n'
+    print_func += '}\n'
+
+    pos = txt.find('static int set_var(')
+    new_txt = txt[:pos] + print_func + txt[pos:]
     return new_txt
 
-
-# this function maybe useless, JEB3 never recognizes function parameters correctly
-def modify_std_fun_call(txt):
-    """ strip the '_ptr_' prefix from std function names
-    """
-    var_reg_exp = r"[*&]{0,1}([A-Za-z_]+[A-Za-z_0-9]*)"
-    id_reg_exp = r"([A-Za-z_]+[A-Za-z_0-9]*)"
-    reg_exp = (r"_ptr_"
-               +id_reg_exp+
-               r"\(.*\);"  # To Be Improved
-               )
-    pattern = re.compile(reg_exp)
-    matches = pattern.finditer(txt)
-    new_txt = txt
-    for m in matches:
-        if __name__ == '__main__':
-            print(m.group())
-        pos = m.start()
-        if txt[pos:pos+5]=='_ptr_':
-            new_txt = new_txt[:pos]+new_txt[pos+5:]
-    return new_txt
-
-
-def modify_loc_label(txt):
-    """add a semicolon at the end of a local label
-       e.g., loc_8048509:;
-    """
-    reg_exp = r"loc_[A-Fa-f0-9]{7,8}:"
-    pattern = re.compile(reg_exp)
-    matches = pattern.finditer(txt)
-    new_txt = ''
-    pos1 = 0
-    pos2 = 0
-    for m in matches:
-        if __name__ == '__main__':
-            print(m.group())
-        pos1 = pos2
-        pos2 = m.end()
-        start_pos = m.start()
-
-        new_txt += txt[pos1:start_pos]
-        this_stmt = m.group()
-        this_stmt = this_stmt+';'
-        new_txt += this_stmt
-    new_txt += txt[pos2:]
-    return new_txt
-
-
-def modify_shift_symbol(txt=''):
-    while txt.find('>>>>') != -1:
-        txt = txt.replace('>>>>', ">>")
-    while txt.find('>>>') != -1:
-        txt = txt.replace('>>>', ">>")
-    while txt.find('<<<<') != -1:
-        txt = txt.replace('<<<<', "<<")
-    while txt.find('<<<<') != -1:
-        txt = txt.replace('<<<<', "<<")
-    return txt
-
-
-def modify_lvalue_cast(txt=''):
-    """ used to handle error like this:
-
-    error: lvalue required as left operand of assignment
-         (unsigned char)v45 = (unsigned char)result;
-
-        just remove (unsigned char) at left
-    """
-    reg_exp = r"\(.*\)[a-z][_a-z0-9]+ = .*;"
-    pattern = re.compile(reg_exp)
-    matches = pattern.finditer(txt)
-    new_txt = ''
-    pos1 = 0
-    pos2 = 0
-    for m in matches:
-        if __name__ == '__main__':
-            print(m.group())
-        pos1 = pos2
-        pos2 = m.end()
-        start_pos = m.start()
-
-        new_txt += txt[pos1:start_pos]
-        this_stmt = m.group()
-        p1 = this_stmt.find('(')
-        p2 = this_stmt.find(')')
-        this_stmt = this_stmt[:p1] + this_stmt[p2+1:]
-        new_txt += this_stmt
-    new_txt += txt[pos2:]
-    return new_txt
-
-
-def modify_unsigned_ijk(txt=''):
-    reg_exp = r"unsigned .* [ijk][^a-z]*;"  # find unsigned i,j and k
-    pattern = re.compile(reg_exp)
-    matches = pattern.finditer(txt)
-    new_txt = ''
-    pos1 = 0
-    pos2 = 0
-    for m in matches:
-        if __name__ == '__main__':
-            print(m.group())
-        pos1 = pos2
-        pos2 = m.end()
-        start_pos = m.start()
-
-        new_txt += txt[pos1:start_pos]
-        this_stmt = m.group()
-        this_stmt = this_stmt.replace('unsigned ', '')
-        new_txt += this_stmt
-    new_txt += txt[pos2:]
-    return new_txt
-
-
-def JEB3_modifier(txt):
-    txt = delete_tmp(txt)
-    txt = modify_reg_var_name(txt)
-    return txt
 
 if __name__ == '__main__':
     '''

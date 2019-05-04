@@ -4,20 +4,13 @@ import os
 import re
 
 import replacer
+import Config
+
 import checker
 
 file_num = 0
 
-csmith_cmd = ("/home/fuzz/Documents/csmith-2.3.0/src/csmith"
-              " --no-arrays"
-              " --no-structs"
-              " --no-unions"
-              " --no-safe-math"
-              " --no-pointers"
-              " --no-longlong"
-              " --max-funcs 1"
-              " --max-expr-complexity 5"  # " --max-expr-complexity 10" # too complicated to analyse?
-              )
+csmith_cmd = Config.csmith_cmd
 
 
 def gen_single_file(file_name):
@@ -31,6 +24,7 @@ def gen_single_file(file_name):
     return status
 
 
+# wasted
 def batch_generate(outdir, num):
     global file_num
     old_num = file_num
@@ -42,8 +36,8 @@ def batch_generate(outdir, num):
 
 
 # compile_cmd = 'gcc -fno-stack-protector -no-pie -O0 -Wall -m32 '
-compile_cmd = 'gcc -fno-stack-protector -no-pie -O0 -w -m32 '
-runtime_dir = '/home/fuzz/Documents/Fuzzer_3_17/tmp/src_code/runtime/'
+compile_cmd = Config.compile_cmd
+runtime_dir = Config.runtime_dir
 
 
 def compile_single_file(file_path):
@@ -63,6 +57,7 @@ def compile_single_file(file_path):
             return 0, ''
 
 
+# wasted
 def batch_compile(src_dir):
     """compile all .c files in the directory"""
     files = os.listdir(src_dir)
@@ -73,25 +68,31 @@ def batch_compile(src_dir):
             print(file + ' compiled')
 
 
-time_cmd = "time -p "
-decompile_cmd = ("'/home/fuzz/Documents/jeb-pro-3.0-beta.8/jeb_linux.sh' "
-                 " -c --srv2 --script='/home/fuzz/Documents/jeb-pro-3.0-beta.8/DecompileFile.py' "
-                 " -- "
-                 )
+time_cmd = Config.time_cmd
+decompile_cmd = Config.decompile_cmd
 
 
 def decompile_single_file(file_path, generated_file_path=''):
     if generated_file_path == '':
-        generated_file_path = file_path + '_JEB3.c'
+        if Config.JEB3_test:
+            generated_file_path = file_path + Config.JEB3_suffix  # '_JEB3.c'
+        elif Config.RetDec_test:
+            generated_file_path = file_path + Config.RetDec_suffix  # '_retdec.c'
     fname, extname = os.path.splitext(file_path)
     if os.path.isdir(file_path):
         pass
     elif extname == '':
         print('Decompiling ' + file_path + ' ...')
-        status, output = \
-            subprocess.getstatusoutput(time_cmd + decompile_cmd +
-                                       fname + ' ' +
-                                       generated_file_path)
+        if Config.JEB3_test:
+            status, output = \
+                subprocess.getstatusoutput(time_cmd + Config.JEB3_decompile_cmd +
+                                           fname + ' ' +
+                                           generated_file_path)
+        elif Config.RetDec_test:
+            status, output = \
+                subprocess.getstatusoutput(time_cmd + Config.RetDec_decompile_cmd +
+                                           fname + ' -o ' +
+                                           generated_file_path)
         # It seems JEB3 returns 0 even
         # when it failed to generate decompiled code file
         isExists = os.path.exists(generated_file_path)
@@ -122,6 +123,7 @@ def decompile_single_file(file_path, generated_file_path=''):
             return 0, real_time, user_time, sys_time
 
 
+# wasted
 def batch_decompile(dir):
     """decompile all files in the directory with JEB3"""
     files = os.listdir(dir)
@@ -162,7 +164,9 @@ def add_extra_declarations(code_txt, error_msg):
         return new_txt
 
 
-def recompile_single_file(source_file='', decompiled_file='', func_name='', keep_func_decl_unchanged=0):
+def recompile_single_file(source_file='', decompiled_file='', func_name='',
+                          keep_func_decl_unchanged=1,
+                          try_second_time=1):
     source_code = replacer.read_file(source_file)
     decompiled_code = replacer.read_file(decompiled_file)
     new_code = replacer.replace_function(source_code,
@@ -179,7 +183,7 @@ def recompile_single_file(source_file='', decompiled_file='', func_name='', keep
         if status == 0:
             # print(new_file_name + ' recompiled')
             return 0, ''
-        else:
+        elif try_second_time != 0:
             # if error: ‘v45’ undeclared
             # try to add declaration then try again
             new_code = add_extra_declarations(new_code, output)
@@ -191,10 +195,13 @@ def recompile_single_file(source_file='', decompiled_file='', func_name='', keep
                 # print(new_file_name + ' recompiled')
                 return 0, ''
             return status, output
+        else:
+            return status, output
     else:
         return -1, ''
 
 
+# wasted
 def batch_recompile(dir):
     files = os.listdir(dir)
     files.sort()
