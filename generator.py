@@ -7,6 +7,7 @@ import replacer
 import Config
 
 import checker
+import IDA_decompile
 
 file_num = 0
 
@@ -78,6 +79,8 @@ def decompile_single_file(file_path, generated_file_path=''):
             generated_file_path = file_path + Config.JEB3_suffix  # '_JEB3.c'
         elif Config.RetDec_test:
             generated_file_path = file_path + Config.RetDec_suffix  # '_retdec.c'
+        elif Config.IDA_test:
+            generated_file_path = file_path + Config.IDA_suffix  # '_ida.c'
     fname, extname = os.path.splitext(file_path)
     if os.path.isdir(file_path):
         pass
@@ -93,6 +96,8 @@ def decompile_single_file(file_path, generated_file_path=''):
                 subprocess.getstatusoutput(time_cmd + Config.RetDec_decompile_cmd +
                                            fname + ' -o ' +
                                            generated_file_path)
+        elif Config.IDA_test:
+            status, output = IDA_decompile.decompile(fname, generated_file_path)
         # It seems JEB3 returns 0 even
         # when it failed to generate decompiled code file
         isExists = os.path.exists(generated_file_path)
@@ -106,7 +111,7 @@ def decompile_single_file(file_path, generated_file_path=''):
             real_time = 0
             user_time = 0
             sys_time = 0
-            output_list = output.split('\n')
+            output_list = output.strip('\n').split('\n')
             output_list = output_list[-3:]
             if output_list[0].find('real') != -1:
                 time_str = output_list[0].split(' ')[1].strip(' s\n')
@@ -123,15 +128,31 @@ def decompile_single_file(file_path, generated_file_path=''):
             return 0, real_time, user_time, sys_time
 
 
-# wasted
 def batch_decompile(dir):
-    """decompile all files in the directory with JEB3"""
+    """decompile all files in the directory"""
+    total_real_time = 0.0
+    total_user_time = 0.0
+    total_sys_time = 0.0
+    file_count = 0
     files = os.listdir(dir)
     files.sort()
     for file in files:
         file_path = os.path.join(dir, file)
-        if decompile_single_file(file_path) == 0:
-            print(file + ' decompiled')
+        if file_path.endswith('.c') or file_path.endswith('.idb') or os.path.isdir(file_path):
+            continue
+        status, real_time, user_time, sys_time = decompile_single_file(file_path)
+        if status == 0:
+            print(file + ' decompiled\n')
+            total_real_time += real_time
+            total_user_time += user_time
+            total_sys_time += sys_time
+            file_count += 1
+        else:
+            print(file + ' decompilation failed\n')
+    print('file_count:', str(file_count))
+    print('total_real_time:', str(total_real_time))
+    print('total_user_time:', str(total_user_time))
+    print('total_sys_time:', str(total_sys_time))
 
 
 def add_extra_declarations(code_txt, error_msg):
@@ -230,6 +251,7 @@ if __name__ == '__main__':
     # batch_recompile("./test")
     # checker.batch_compare("./test")
 
+    '''
     f = open('./tmp/src_code/csmith_test_16_m_new.c')
     txt = f.read()
     f.close()
@@ -241,3 +263,5 @@ if __name__ == '__main__':
 ./tmp/src_code/csmith_test_16_m_new.c:140:32: note: each undeclared identifier is reported only once for each function it appears in"""
     new_txt = add_extra_declarations(txt, error)
     print(new_txt)
+    '''
+    batch_decompile(r"C:\Users\john\Desktop\IDA_test\csmith_files_for_ida")

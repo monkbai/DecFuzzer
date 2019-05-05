@@ -6,9 +6,9 @@ timeout_sec = 2
 
 replaced_func_name = 'func_1'
 
-RetDec_test = True
+RetDec_test = False
 JEB3_test = False
-IDA_test = False
+IDA_test = True
 
 time_cmd = "time -p "
 # decompile_cmd may be not used anymore
@@ -20,6 +20,7 @@ decompile_cmd = ("'/home/fuzz/Documents/jeb-pro-3.0-beta.8/jeb_linux.sh' "
 
 JEB3_suffix = '_JEB3.c'
 RetDec_suffix = '_retdec.c'
+IDA_suffix = '_ida.c'
 
 JEB3_decompile_cmd = ("'/home/fuzz/Documents/jeb-pro-3.0-beta.8/jeb_linux.sh' "
                       " -c --srv2 --script='/home/fuzz/Documents/jeb-pro-3.0-beta.8/DecompileFile.py' "
