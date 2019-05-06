@@ -341,33 +341,39 @@ def test_single_random_file(out_dir, the_name):
     remove_files(file_path, modified_file)
 
 
-def test_single_file(file_path, current_dir, EMI_dir='', mutation=1):
+def test_single_file(file_path, current_dir, EMI_dir='', mutation_flag=1, compile_flag=1, decompile_flag=1):
     global file_count, EMI_count, total_real_time, total_user_time, total_sys_time
     err_dir = os.path.join(current_dir, 'error/')
     result_dir = os.path.join(current_dir, 'result/')
+
     # Step 1: compile
-    status, output = generator.compile_single_file(file_path)
-    if status != 0:
-        # copy their source code to error directory
-        copy_file(file_path, err_dir)
-        return
+    if compile_flag != 0:
+        status, output = generator.compile_single_file(file_path)
+        if status != 0:
+            # copy their source code to error directory
+            copy_file(file_path, err_dir)
+            return
 
     # Step 2: decompile
-    status, real_time, user_time, sys_time = generator.decompile_single_file(file_path[:-2])
-    total_real_time += real_time
-    total_user_time += user_time
-    total_sys_time += sys_time
-    file_count += 1
+    if decompile_flag != 0:
+        status, real_time, user_time, sys_time = generator.decompile_single_file(file_path[:-2])
+        total_real_time += real_time
+        total_user_time += user_time
+        total_sys_time += sys_time
+        file_count += 1
 
-    if status != 0:
-        copy_file(file_path, err_dir)
-        return
+        if status != 0:
+            copy_file(file_path, err_dir)
+            return
 
     # Step 3: recompile
     if Config.JEB3_test:
         decompiled_file_name = file_path[:-2] + Config.JEB3_suffix  # '_JEB3.c'
     elif Config.RetDec_test:
         decompiled_file_name = file_path[:-2] + Config.RetDec_suffix  # '_retdec.c'
+    elif Config.IDA_test:
+        decompiled_file_name = file_path[:-2] + Config.IDA_suffix  # '_ida.c'
+
     status, output = generator.recompile_single_file(file_path,
                                                      decompiled_file_name,
                                                      func_name=Config.replaced_func_name,  # func_1
@@ -391,7 +397,7 @@ def test_single_file(file_path, current_dir, EMI_dir='', mutation=1):
                                               result_dir)
 
     # Step 5(may be skipped): EMI mutation
-    if status == 0 and mutation != 0:
+    if status == 0 and output != b'' and mutation_flag != 0:
         # information about code length
         f = open(file_path)
         original_code = f.read()
@@ -413,10 +419,18 @@ def test_single_file(file_path, current_dir, EMI_dir='', mutation=1):
         if ((end1 - start1) - (end2 - start2)) > 12000:
             number_of_var -= (((end1 - start1) - (end2 - start2)) - 12000) / 400
 
+        variant_log_file_path = os.path.join(EMI_dir, 'variant_log.txt')
+        append_to_file(variant_log_file_path, '\nfile '+file_path+'\n')
         generate_emi_variants(number_of_var, file_path, EMI_dir)
 
     # Step 6: remove redundant files
     pass
+
+
+def append_to_file(file_path, append_str):
+    f = open(file_path, 'a')
+    f.write(append_str)
+    f.close()
 
 
 def generate_emi_variants(number_of_var, file_path, emi_dir):
@@ -425,6 +439,8 @@ def generate_emi_variants(number_of_var, file_path, emi_dir):
         emi = EMI_generator.EMIWrapper(file_path)
 
         print('about %d variants will be generated, they are:' % int(number_of_var))
+        variant_log_file_path = os.path.join(emi_dir, 'variant_log.txt')
+        append_to_file(variant_log_file_path, 'about %d variants will be generated, they are:' % int(number_of_var)+'\n')
         for i in range(int(number_of_var)):
             status, variant_txt = emi.gen_a_new_variant()
             if status == -1:
@@ -440,6 +456,8 @@ def generate_emi_variants(number_of_var, file_path, emi_dir):
                 f.write(variant_txt)
                 f.close()
             print(variant_path, ' is generated')
+            variant_log_file_path = os.path.join(emi_dir, 'variant_log.txt')
+            append_to_file(variant_log_file_path, variant_path + ' is generated\n')
 
             # try to avoid redundant variants, too
             if emi.AP.dis_new == emi.AP.dis_old:
@@ -476,6 +494,30 @@ def test_batch_csmith_files(current_files_dir, EMI_variant_dir=''):
         set_config(config_file)
 
 
+def batch_recompile_and_test(current_files_dir, EMI_variant_dir=''):
+    """ used for recompiling IDA outputs and generating new EMI variants
+        without compilation and decompilation steps
+    """
+    global file_count
+    config_file = os.path.join(current_files_dir, 'config_txt')
+    get_config(config_file)
+    while True:
+        print('\n', str(file_count) + '.c')
+        file_path = os.path.join(current_files_dir, str(file_count) + '.c')
+        is_exist = os.path.exists(file_path)
+        if not is_exist:
+            break
+        if EMI_variant_dir == '':
+            mutation = 0
+        else:
+            mutation = 1
+
+        test_single_file(file_path, current_files_dir, EMI_variant_dir, mutation, compile_flag=0, decompile_flag=0)
+        file_count += 1
+        set_config(config_file)
+    pass
+
+
 if __name__ == '__main__':
     # test
     '''
@@ -497,7 +539,12 @@ if __name__ == '__main__':
         set_config(config_file='./tmp/src_code/config_txt')
     '''
 
-    csmith_dir = './tmp_retdec_test/csmith_files'
-    emi_dir = './tmp_retdec_test/emi_files'
+    # csmith_dir = './tmp_retdec_test/csmith_files'
+    # emi_dir = './tmp_retdec_test/emi_files'
     # test_batch_csmith_files(csmith_dir, emi_dir)
-    test_batch_csmith_files(emi_dir)
+    # test_batch_csmith_files(emi_dir)
+
+    csmith_dir = './tmp_ida_test/csmith_files_for_ida/'
+    emi_dir = './tmp_ida_test/emi_files_for_ida/'
+    batch_recompile_and_test(csmith_dir, emi_dir)
+    # batch_recompile_and_test(emi_dir)

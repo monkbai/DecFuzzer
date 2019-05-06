@@ -17,7 +17,7 @@ void_par_reg = r"((void){0,1})"
 # the regular expression used to match function type
 fun_type_reg = (r"("
                 r"(static\s+){0,1}" +   # static
-                r"(unsigned\s+){0,1}" +   # unsigned
+                r"((signed|unsigned)\s+){0,1}" +   # signed | unsigned
                 type_reg_exp +   # type
                 r"(\s+\**\s*)"  # pointer
                 r")")
@@ -94,7 +94,7 @@ def replace_function(source_code, decompiled_code, func_name, keep_func_decl_unc
     elif Config.RetDec_test:
         decompiled_code = modifier.RetDec_modifier_before(decompiled_code)
     elif Config.IDA_test:
-        pass
+        decompiled_code = modifier.IDA_modifier_before(decompiled_code)
 
     # Step B: get decompiled func_1 code
     m1 = find_fun_with_name(source_code, func_name)
@@ -117,7 +117,7 @@ def replace_function(source_code, decompiled_code, func_name, keep_func_decl_unc
     elif Config.RetDec_test:
         main_fun = modifier.RetDec_modifier_after(main_fun)
     elif Config.IDA_test:
-        pass
+        main_fun = modifier.IDA_modifier_after(main_fun)
 
     # Step D: replace
     if keep_func_decl_unchange == 0:

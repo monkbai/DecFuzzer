@@ -811,7 +811,7 @@ class EMIWrapper:
             times_count += 1
             path1 = './last_variant_txt.tmp.c'
             self.write_to_file(path1, self.last_variant_txt)
-            print('trying %dth times to generate next variant...' % times_count)
+            # print('trying %dth times to generate next variant...' % times_count)
             self.emi = EMIGenerator(path1)
             sta, out = self.emi.gen_coverage_file()
             if sta != 0:
@@ -839,7 +839,7 @@ class EMIWrapper:
                     Config.probability_live_code_mutate = (0.3 - (0.1*(d_s_new/100.0)))
                 elif d_s_new < 0:
                     Config.probability_live_code_mutate = 0.3
-                print('new variant generated, distance: ', str(self.AP.dis_new))
+                # print('new variant generated, distance: ', str(self.AP.dis_new))
         self.last_variant_txt = self.new_variant_txt
         return 0, self.new_variant_txt
 

@@ -297,7 +297,7 @@ class Distance:
         d_s = self.cfg_1.func_1_size - self.cfg_2.func_1_size
         # d_s = abs(d_s)
         self.d_s = d_s
-        print('abs d_size ', abs(d_s))
+        # print('abs d_size ', abs(d_s))
         distance = self.alpha*d_v + self.beta*d_e - self.gamma*abs(d_s)
 
         # print('distance:', distance, '=',
@@ -331,14 +331,14 @@ class AcceptProb:
         distance_new = Distance(cfg_q_new, cfg_p)
 
         self.dis_new = distance_new.get_distance()
-        print('distance new', self.dis_new)
+        # print('distance new', self.dis_new)
         self.dis_old = distance_old.get_distance()
-        print('distance old', self.dis_old)
+        # print('distance old', self.dis_old)
 
         if math.exp(self.sigma * (self.dis_new - self.dis_old)) >= 1:
-            print('probability ', str(1))
+            # print('probability ', str(1))
             return 1, distance_new.d_s, distance_old.d_s
-        print('probability ', math.exp(self.sigma * (self.dis_new - self.dis_old)))
+        # print('probability ', math.exp(self.sigma * (self.dis_new - self.dis_old)))
         # return accept_probability, diff_size_of_new_file, diff_size_of_old_file
         return math.exp(self.sigma * (self.dis_new - self.dis_old)), distance_new.d_s, distance_old.d_s
 

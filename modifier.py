@@ -403,6 +403,66 @@ class RetDecModifier:
         return new_txt
 
 
+class IDAModifier:
+    @staticmethod
+    def modify_type_macros(txt=''):
+        txt = txt.replace('__int32', 'long long')
+        txt = txt.replace('__int32', 'int')
+        txt = txt.replace('__int16', 'short')
+        txt = txt.replace('__int8', 'char')
+        txt = txt.replace('_BYTE', 'unsigned char')
+        txt = txt.replace('_WORD', 'unsigned short')
+        txt = txt.replace('_DWORD', 'unsigned int')
+        txt = txt.replace('_QWORD', 'unsigned long long')
+        txt = txt.replace('BYTE', 'char')
+        txt = txt.replace('WORD', 'short')
+        txt = txt.replace('DWORD', 'int')
+        txt = txt.replace('LONG', 'int')
+        txt = txt.replace('QWORD', 'long long')
+        txt = txt.replace('_BOOL1', 'char')
+        txt = txt.replace('_BOOL2', 'short')
+        txt = txt.replace('_BOOL4', 'int')
+        txt = txt.replace('bool', 'int')
+        txt = txt.replace('BOOL', 'int')
+        return txt
+
+    @staticmethod
+    def modify_one_pa_macros(txt='', reg_exp='', replace_str=''):
+        """used to modify some partial accesses macros"""
+        reg_exp = reg_exp.replace('x', r'([a-zA-Z0-9_\[\]\*]*)')
+        pattern = re.compile(reg_exp)
+        matches = pattern.finditer(txt)
+        pos1 = 0
+        pos2 = 0
+        new_txt = ''
+        for m in matches:
+            pos1 = pos2
+            pos2 = m.end()
+            tmp_replace_str = replace_str
+            tmp_replace_str = tmp_replace_str.replace('x', m.group(1))
+            new_txt += txt[pos1:m.start()] + tmp_replace_str
+        new_txt += txt[pos2:]
+        return new_txt
+
+    @staticmethod
+    def modify_all_pa_macros(txt=''):
+        txt = IDAModifier.modify_one_pa_macros(txt, r'LOBYTE\(x\)',  '(*((_BYTE*)&(x)))')
+        txt = IDAModifier.modify_one_pa_macros(txt, r'LOWORD\(x\)',  '(*((_WORD*)&(x)))')
+        txt = IDAModifier.modify_one_pa_macros(txt, r'LODWORD\(x\)', '(*((_DWORD*)&(x)))')
+        txt = IDAModifier.modify_one_pa_macros(txt, r'HIBYTE\(x\)',  '(*((_BYTE*)&(x)+1))')
+        txt = IDAModifier.modify_one_pa_macros(txt, r'HIWORD\(x\)',  '(*((_WORD*)&(x)+1))')
+        txt = IDAModifier.modify_one_pa_macros(txt, r'HIDWORD\(x\)', '(*((_DWORD*)&(x)+1))')
+
+        txt = IDAModifier.modify_one_pa_macros(txt, r'SLOBYTE\(x\)',  '(*((char*)&(x)))')
+        txt = IDAModifier.modify_one_pa_macros(txt, r'SLOWORD\(x\)',  '(*((short*)&(x)))')
+        txt = IDAModifier.modify_one_pa_macros(txt, r'SLODWORD\(x\)', '(*((int*)&(x)))')
+        txt = IDAModifier.modify_one_pa_macros(txt, r'SHIBYTE\(x\)',  '(*((char*)&(x)+1))')
+        txt = IDAModifier.modify_one_pa_macros(txt, r'SHIWORD\(x\)',  '(*((short*)&(x)+1))')
+        txt = IDAModifier.modify_one_pa_macros(txt, r'SHIDWORD\(x\)', '(*((int*)&(x)+1))')
+
+        return txt
+
+
 def JEB3_modifier_before(txt):
     txt = JEB3Modifier.delete_tmp(txt)
     txt = JEB3Modifier.modify_reg_var_name(txt)
@@ -427,6 +487,16 @@ def RetDec_modifier_before(txt):
 
 def RetDec_modifier_after(main_func):
     main_func = RetDecModifier.delete_lines(main_func, '__x86_get_pc_thunk')
+    return main_func
+
+
+def IDA_modifier_before(txt):
+    txt = IDAModifier.modify_all_pa_macros(txt)
+    txt = IDAModifier.modify_type_macros(txt)
+    return txt
+
+
+def IDA_modifier_after(main_func):
     return main_func
 
 
@@ -480,6 +550,7 @@ if __name__ == '__main__':
     print(test_str)
     '''
 
+    '''
     f = open('./tmp/src_code/result/csmith_test_1058.c')
     if f:
         txt = f.read()
@@ -491,6 +562,7 @@ if __name__ == '__main__':
     # if f:
     #     f.write(src_modifier.modified_txt)
     # f.close()
+    '''
 
     '''
     f = open('./tmp/src_code/csmith_test_5_m_new.c')
@@ -499,3 +571,7 @@ if __name__ == '__main__':
     txt = modify_unsigned_ijk(txt)
     print(txt)
     '''
+    test_str = open('/home/fuzz/Documents/Fuzzer_3_17/tmp_ida_test/csmith_files_for_ida/238_ida.c').read()
+    test_str = IDA_modifier_before(test_str)
+    m1 = find_fun_with_name(test_str, 'func_1')
+    print(m1.group())
