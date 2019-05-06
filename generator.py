@@ -264,4 +264,4 @@ if __name__ == '__main__':
     new_txt = add_extra_declarations(txt, error)
     print(new_txt)
     '''
-    batch_decompile(r"C:\Users\john\Desktop\IDA_test\csmith_files_for_ida")
+    batch_decompile(r"C:\Users\john\Desktop\IDA_test\emi_files_for_ida")
