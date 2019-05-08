@@ -6,9 +6,9 @@ timeout_sec = 2
 
 replaced_func_name = 'func_1'
 
-RetDec_test = False
+RetDec_test = True
 JEB3_test = False
-IDA_test = True
+IDA_test = False
 
 time_cmd = "time -p "
 # decompile_cmd may be not used anymore

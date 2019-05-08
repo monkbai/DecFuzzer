@@ -372,6 +372,11 @@ class RetDecModifier:
         return txt
 
     @staticmethod
+    def modify_true_value(txt=''):
+        txt = txt.replace('true', '1')
+        return txt
+
+    @staticmethod
     def add_global_var_decl(txt=''):
         """ add global vars into main function
             these global vars(e.g., g1, g2, ...) may be useless
@@ -406,7 +411,7 @@ class RetDecModifier:
 class IDAModifier:
     @staticmethod
     def modify_type_macros(txt=''):
-        txt = txt.replace('__int32', 'long long')
+        txt = txt.replace('__int64', 'long long')
         txt = txt.replace('__int32', 'int')
         txt = txt.replace('__int16', 'short')
         txt = txt.replace('__int8', 'char')
@@ -487,6 +492,7 @@ def RetDec_modifier_before(txt):
 
 def RetDec_modifier_after(main_func):
     main_func = RetDecModifier.delete_lines(main_func, '__x86_get_pc_thunk')
+    main_func = RetDecModifier.modify_true_value(main_func)
     return main_func
 
 

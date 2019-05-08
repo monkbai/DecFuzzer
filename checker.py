@@ -25,7 +25,33 @@ def compare_two_prog(prog1, prog2, result_dir):
     stdout1, stderr1 = run_single_prog(prog1)
     stdout2, stderr2 = run_single_prog(prog2)
 
-    if len(stdout1) > 100 or len(stdout1) > 100:
+    if len(stdout1) > 100:
+        result_log = os.path.join(result_dir, 'result_log.txt')
+        f = open(result_log, 'a')
+        f.write('WRONG: stdout1 is very long.\n')
+        print('WRONG: stdout1 is very long.')
+        f.write(prog1 + '\n')
+        f.write(prog2 + '\n')
+        f.close()
+        # copy their source code to result directory
+        status, output = \
+            getstatusoutput('cp ' + prog1 + '.c ' + result_dir)
+        status, output = \
+            getstatusoutput('cp ' + prog2 + '.c ' + result_dir)
+        return -1, ''
+    elif len(stdout2) > 100:
+        result_log = os.path.join(result_dir, 'result_log.txt')
+        f = open(result_log, 'a')
+        f.write('WRONG: stdout2 is very long.\n')
+        print('WRONG: stdout2 is very long.')
+        f.write(prog1 + '\n')
+        f.write(prog2 + '\n')
+        f.close()
+        # copy their source code to result directory
+        status, output = \
+            getstatusoutput('cp ' + prog1 + '.c ' + result_dir)
+        status, output = \
+            getstatusoutput('cp ' + prog2 + '.c ' + result_dir)
         return -1, ''
 
     if stdout1 != stdout2:

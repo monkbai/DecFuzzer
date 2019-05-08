@@ -544,7 +544,22 @@ if __name__ == '__main__':
     # test_batch_csmith_files(csmith_dir, emi_dir)
     # test_batch_csmith_files(emi_dir)
 
-    csmith_dir = './tmp_ida_test/csmith_files_for_ida/'
-    emi_dir = './tmp_ida_test/emi_files_for_ida/'
-    batch_recompile_and_test(csmith_dir, emi_dir)
+    # csmith_dir = './tmp_ida_test/csmith_files_for_ida/'
+    # emi_dir = './tmp_ida_test/emi_files_for_ida/'
+    # batch_recompile_and_test(csmith_dir, emi_dir)
     # batch_recompile_and_test(emi_dir)
+
+    num_list = open('./tmp_retdec_test/emi_files/error/error_log_s.txt').readline().split(',')
+    for num_txt in num_list:
+        file_num = int(num_txt)
+        print('\n', str(file_num) + '.c')
+        file_path = os.path.join('./tmp_retdec_test/emi_files/', str(file_num) + '.c')
+        is_exist = os.path.exists(file_path)
+        if not is_exist:
+            break
+
+        mutation = 0
+
+        test_single_file(file_path, './tmp_retdec_test/emi_files/', '', mutation, compile_flag=0, decompile_flag=0)
+        if file_num == 905:
+            break
