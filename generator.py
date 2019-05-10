@@ -139,6 +139,8 @@ def batch_decompile(dir):
         file_path = os.path.join(dir, file)
         if file_path.endswith('.c') or file_path.endswith('.idb') or os.path.isdir(file_path) or file_path.endswith('_new'):
             continue
+        if os.path.exists(file_path+'_JEB3.c'):
+            continue
         status, real_time, user_time, sys_time = decompile_single_file(file_path)
         if status == 0:
             print(file + ' decompiled\n')
@@ -351,8 +353,8 @@ if __name__ == '__main__':
     Config.JEB3_test = True
     Config.RetDec_test = False
     # batch_compile('./tmp_packed_store/packet/test_cases/csmith_files/')
-    batch_decompile('./tmp_packed_store/packet/test_cases/csmith_files/')
-    batch_recompile('./tmp_packed_store/packet/test_cases/csmith_files/')
-    batch_compile('./tmp_packed_store/packet/test_cases/emi_files/')
+    # batch_decompile('./tmp_packed_store/packet/test_cases/csmith_files/')
+    # batch_recompile('./tmp_packed_store/packet/test_cases/csmith_files/')
+    # batch_compile('./tmp_packed_store/packet/test_cases/emi_files/')
     batch_decompile('./tmp_packed_store/packet/test_cases/emi_files/')
     batch_recompile('./tmp_packed_store/packet/test_cases/emi_files/')

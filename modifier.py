@@ -499,6 +499,7 @@ def RetDec_modifier_after(main_func):
 def IDA_modifier_before(txt):
     txt = IDAModifier.modify_all_pa_macros(txt)
     txt = IDAModifier.modify_type_macros(txt)
+    txt = txt.replace('__stdcall', '')
     return txt
 
 
