@@ -2,7 +2,7 @@ import re
 import modifier
 import Config
 
-type_reg_exp = r"(void|int|char|short|long|int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t)"
+type_reg_exp = r"(void|int|char|short|long|int8_t|uint8_t|int16_t|uint16_t|int32_t|uint32_t|int64_t|uint64_t|struct|union)"
 id_reg_exp = r"([A-Za-z_]+[A-Za-z_0-9]*)"
 # the regular expression used to match parameters
 par_dec_reg = (r"("
@@ -19,6 +19,7 @@ fun_type_reg = (r"("
                 r"(static\s+){0,1}" +   # static
                 r"((signed|unsigned)\s+){0,1}" +   # signed | unsigned
                 type_reg_exp +   # type
+                r"(\s+[A-Za-z0-9_]*\s+){0,1}" +
                 r"(\s+\**\s*)"  # pointer
                 r")")
 
