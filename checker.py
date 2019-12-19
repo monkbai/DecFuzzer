@@ -63,6 +63,11 @@ def compare_two_prog(prog1, prog2, result_dir):
         print(prog1 + '     outputs [' + str(stdout1) + ']')
         f.write(prog2 + ' outputs [' + str(stdout2) + ']\n')
         print(prog2 + ' outputs [' + str(stdout2) + ']')
+        # add error information
+        f.write(prog1 + '     errors [' + str(stderr1) + ']\n')
+        print(prog1 + '     errors [' + str(stderr1) + ']')
+        f.write(prog2 + ' errors [' + str(stderr2) + ']\n')
+        print(prog2 + ' errors [' + str(stderr2) + ']')
         f.close()
         # copy their source code to result directory
         status, output = \
@@ -75,10 +80,16 @@ def compare_two_prog(prog1, prog2, result_dir):
         f = open(result_log, 'a')
         f.write('Found discrepancy:\n')
         print('Found discrepancy:')
-        f.write(prog1 + '     errors [' + stderr1 + ']\n')
-        print(prog1 + '     errors [' + stderr1 + ']')
-        f.write(prog2 + ' errors [' + stderr2 + ']\n')
-        print(prog2 + ' errors [' + stderr2 + ']')
+        # add output
+        f.write(prog1 + '     outputs [' + str(stdout1) + ']\n')
+        print(prog1 + '     outputs [' + str(stdout1) + ']')
+        f.write(prog2 + ' outputs [' + str(stdout2) + ']\n')
+        print(prog2 + ' outputs [' + str(stdout2) + ']')
+
+        f.write(prog1 + '     errors [' + str(stderr1) + ']\n')
+        print(prog1 + '     errors [' + str(stderr1) + ']')
+        f.write(prog2 + ' errors [' + str(stderr2) + ']\n')
+        print(prog2 + ' errors [' + str(stderr2) + ']')
         f.close()
         return -1,stdout1
     else:

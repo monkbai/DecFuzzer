@@ -341,6 +341,11 @@ def test_single_random_file(out_dir, the_name):
     remove_files(file_path, modified_file)
 
 
+# -----------------------------------------------------------------------------------
+# core functions: <test_single_file>, <recompile_single_file>, <generate_emi_variants>
+# -----------------------------------------------------------------------------------
+
+
 def test_single_file(file_path, current_dir, EMI_dir='', mutation_flag=1, compile_flag=1, decompile_flag=1):
     global file_count, EMI_count, total_real_time, total_user_time, total_sys_time
     err_dir = os.path.join(current_dir, 'error/')
@@ -373,12 +378,14 @@ def test_single_file(file_path, current_dir, EMI_dir='', mutation_flag=1, compil
         decompiled_file_name = file_path[:-2] + Config.RetDec_suffix  # '_retdec.c'
     elif Config.IDA_test:
         decompiled_file_name = file_path[:-2] + Config.IDA_suffix  # '_ida.c'
+    elif Config.R2_test:
+        decompiled_file_name = file_path[:-2] + Config.Radare2_suffix  # '_r2.c'
 
     status, output = generator.recompile_single_file(file_path,
                                                      decompiled_file_name,
                                                      func_name=Config.replaced_func_name,  # func_1
                                                      keep_func_decl_unchanged=1,
-                                                     try_second_time=0)
+                                                     try_second_time=1)
     if status != 0:
         copy_file(file_path, err_dir)
         copy_file(decompiled_file_name, err_dir)
@@ -411,11 +418,11 @@ def test_single_file(file_path, current_dir, EMI_dir='', mutation_flag=1, compil
         print('synthesized function length:', str(end2 - start2))
 
         if ((end1 - start1) - (end2 - start2)) > 1000:
-            number_of_var = ((end1 - start1) - (end2 - start2)) / 400
+            number_of_var = ((end1 - start1) - (end2 - start2)) / 500
         else:
             number_of_var = 0
         # For efficiency, reduce some big programs which may need a HUGE time to decompile
-        number_of_var = min(30, number_of_var)
+        number_of_var = min(10, number_of_var)
         if ((end1 - start1) - (end2 - start2)) > 12000:
             number_of_var -= (((end1 - start1) - (end2 - start2)) - 12000) / 400
 
@@ -549,17 +556,58 @@ if __name__ == '__main__':
     # batch_recompile_and_test(csmith_dir, emi_dir)
     # batch_recompile_and_test(emi_dir)
 
-    num_list = open('./tmp_retdec_test/emi_files/error/error_log_s.txt').readline().split(',')
-    for num_txt in num_list:
-        file_num = int(num_txt)
-        print('\n', str(file_num) + '.c')
-        file_path = os.path.join('./tmp_retdec_test/emi_files/', str(file_num) + '.c')
-        is_exist = os.path.exists(file_path)
-        if not is_exist:
-            break
+    # error_list = [#'/home/fuzz/Documents/Cutter/error/131.c',
+    #               #'/home/fuzz/Documents/Cutter/error/157.c',
+    #               #'/home/fuzz/Documents/Cutter/error/225.c',
+    #               #'/home/fuzz/Documents/Cutter/error/291.c',
+    #               #'/home/fuzz/Documents/Cutter/error/324.c',
+    #               #'/home/fuzz/Documents/Cutter/error/358.c',
+    #               #'/home/fuzz/Documents/Cutter/error/372.c',
+    #               #'/home/fuzz/Documents/Cutter/error/493.c',
+    #               #'/home/fuzz/Documents/Cutter/error/502.c',
+    #               #'/home/fuzz/Documents/Cutter/error/503.c',
+    #               #'/home/fuzz/Documents/Cutter/error/524.c',
+    #               #'/home/fuzz/Documents/Cutter/error/526.c',
+    #               #'/home/fuzz/Documents/Cutter/error/531.c',
+    #               #'/home/fuzz/Documents/Cutter/error/589.c',
+    #               #'/home/fuzz/Documents/Cutter/error/590.c',
+    #               #'/home/fuzz/Documents/Cutter/error/637.c',
+    #               #'/home/fuzz/Documents/Cutter/error/671.c',
+    #               #'/home/fuzz/Documents/Cutter/error/709.c',
+    #               #'/home/fuzz/Documents/Cutter/error/715.c',
+    #               #'/home/fuzz/Documents/Cutter/error/722.c',
+    #               #'/home/fuzz/Documents/Cutter/error/738.c',
+    #               '/home/fuzz/Documents/Cutter/error/775.c',
+    #               '/home/fuzz/Documents/Cutter/error/861.c',
+    #               '/home/fuzz/Documents/Cutter/error/872.c',
+    #               '/home/fuzz/Documents/Cutter/error/878.c']
+    #
+    # for file_path in error_list:
+    #     file_path = file_path.replace('error/', '')
+    #     get_config('/home/fuzz/Documents/Cutter/config.txt')
+    #     test_single_file(file_path, '/home/fuzz/Documents/Cutter/', EMI_dir="/home/fuzz/Documents/Cutter/emi_files",
+    #                      mutation_flag=1, compile_flag=1, decompile_flag=1)
+    #     set_config('/home/fuzz/Documents/Cutter/config.txt')
 
-        mutation = 0
+    emi_folder = '/home/fuzz/Documents/Cutter/emi_files/emi/'
+    begin_flag = False
+    for root, dirs, files in os.walk('/home/fuzz/Documents/Cutter/emi_files'):
+        files.sort()
+        for f in files:
+            if f.endswith('.c') and not f.endswith('_r2.c') and not f.endswith('_new.c'):
+                if root.endswith('emi_files'):
+                    if f == '2343.c':
+                        begin_flag = True
 
-        test_single_file(file_path, './tmp_retdec_test/emi_files/', '', mutation, compile_flag=0, decompile_flag=0)
-        if file_num == 905:
-            break
+                    if not begin_flag:
+                        continue
+
+                    # test all files in this folder
+                    file_path = os.path.join(root, f)
+                    current_dir = root
+
+                    get_config('/home/fuzz/Documents/Cutter/emi_files/config.txt')
+                    test_single_file(file_path, current_dir, EMI_dir=emi_folder,
+                                     mutation_flag=0, compile_flag=1, decompile_flag=1)
+                    set_config('/home/fuzz/Documents/Cutter/emi_files/config.txt')
+

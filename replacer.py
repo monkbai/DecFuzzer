@@ -68,14 +68,24 @@ def find_fun_with_name(txt, fun_name):
 
 def find_function_body(txt, body_start_pos):
     brace_num = 0
+    length = len(txt)
+    last_right_brace = -1
     if txt[body_start_pos-1]=='{':
         brace_num += 1
         # body_start_pos += 1
     while brace_num != 0:
+        # in case { in a string: '{'
+        # this may happen in Radare2
+        if body_start_pos >= length:
+            return last_right_brace + 1
+
         if txt[body_start_pos]=='{':
-            brace_num += 1
+            if txt[body_start_pos - 1] != r"'" or txt[body_start_pos + 1] != r"'":
+                brace_num += 1
         elif txt[body_start_pos]=='}':
-            brace_num -= 1
+            if txt[body_start_pos - 1] != r"'" or txt[body_start_pos + 1] != r"'":
+                brace_num -= 1
+            last_right_brace = body_start_pos
         body_start_pos += 1
     body_end_pos = body_start_pos
     return body_end_pos
@@ -96,6 +106,8 @@ def replace_function(source_code, decompiled_code, func_name, keep_func_decl_unc
         decompiled_code = modifier.RetDec_modifier_before(decompiled_code)
     elif Config.IDA_test:
         decompiled_code = modifier.IDA_modifier_before(decompiled_code)
+    elif Config.R2_test:
+        decompiled_code = modifier.R2_modifier_before(decompiled_code)
 
     # Step B: get decompiled func_1 code
     m1 = find_fun_with_name(source_code, func_name)
@@ -119,6 +131,8 @@ def replace_function(source_code, decompiled_code, func_name, keep_func_decl_unc
         main_fun = modifier.RetDec_modifier_after(main_fun)
     elif Config.IDA_test:
         main_fun = modifier.IDA_modifier_after(main_fun)
+    elif Config.R2_test:
+        main_fun = modifier.R2_modifier_after(main_fun)
 
     # Step D: replace
     if keep_func_decl_unchange == 0:

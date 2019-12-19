@@ -468,6 +468,28 @@ class IDAModifier:
         return txt
 
 
+class R2Modifier:
+    @staticmethod
+    def modify_undefined(txt='', mark=''):
+        txt = txt.replace(mark, 'int')  # undefined4 is the unrecognized type
+        return txt
+
+    @staticmethod
+    def modify_sym(txt=''):
+        txt = txt.replace('sym.', '')  # all functions start with sym. ?
+        return txt
+
+    @staticmethod
+    def delete_lines(txt='', mark=''):
+        pos = txt.find(mark)
+        while pos != -1:
+            beg_pos = line_begin(txt, pos)
+            end_pos = line_end(txt, pos)
+            txt = txt[0:beg_pos] + txt[end_pos:]
+            pos = txt.find(mark)
+        return txt
+
+
 def JEB3_modifier_before(txt):
     txt = JEB3Modifier.delete_tmp(txt)
     txt = JEB3Modifier.modify_reg_var_name(txt)
@@ -505,6 +527,39 @@ def IDA_modifier_before(txt):
 
 def IDA_modifier_after(main_func):
     return main_func
+
+
+def R2_modifier_before(txt):
+    txt = txt.replace('unkint3', 'int')
+    txt = R2Modifier.delete_lines(txt, '__x86.')
+    txt = txt.replace('CONCAT31', '')
+    txt = R2Modifier.delete_lines(txt, 'CONCAT')
+    txt = txt.replace('ZEXT14', '')
+    txt = txt.replace('SEXT14', '')
+    txt = txt.replace('SEXT24', '')
+    txt = txt.replace('SUB41', '')
+    txt = txt.replace('SBORROW4', '')
+    txt = R2Modifier.delete_lines(txt, 'ZEXT')
+    txt = R2Modifier.delete_lines(txt, 'SEXT')
+    txt = R2Modifier.delete_lines(txt, 'SUB')
+    txt = R2Modifier.delete_lines(txt, 'SBORROW')
+    txt = R2Modifier.delete_lines(txt, '// WARNING')
+    txt = R2Modifier.delete_lines(txt, '// signed')
+
+    txt = R2Modifier.modify_sym(txt)
+    txt = R2Modifier.modify_undefined(txt, 'undefined4')
+    txt = R2Modifier.modify_undefined(txt, 'undefined2')
+
+    txt = txt.replace('bool', 'int')
+    txt = txt.replace('true', '1')
+    txt = txt.replace('false', '0')
+    txt = re.sub(r"\.\s*_[0-9]_[0-9]_", '', txt)
+    return txt
+
+
+def R2_modifier_after(main_fun):
+    # temporarily nothing
+    return main_fun
 
 
 # used in EMI_generator: gen_a_new_variant

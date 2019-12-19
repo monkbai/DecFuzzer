@@ -8,6 +8,7 @@ import Config
 
 import checker
 import IDA_decompile
+import R2_decompile
 
 file_num = 0
 
@@ -66,7 +67,9 @@ def batch_compile(src_dir):
         file_path = os.path.join(src_dir, file)
         if not file_path.endswith('.c'):
             continue
-        if file_path.endswith('_JEB3.c') or file_path.endswith('_retdec.c') or file_path.endswith('_ida.c'):
+        if file_path.endswith('_JEB3.c') or file_path.endswith('_retdec.c') or file_path.endswith('_ida.c') or file_path.endswith('_new.c'):
+            continue
+        if os.path.exists(file_path[:-2]):
             continue
         if compile_single_file(file_path)[0] == 0:
             print(file + ' compiled')
@@ -84,6 +87,8 @@ def decompile_single_file(file_path, generated_file_path=''):
             generated_file_path = file_path + Config.RetDec_suffix  # '_retdec.c'
         elif Config.IDA_test:
             generated_file_path = file_path + Config.IDA_suffix  # '_ida.c'
+        elif Config.R2_test:
+            generated_file_path = file_path + Config.Radare2_suffix  # '_r2.c'
     fname, extname = os.path.splitext(file_path)
     if os.path.isdir(file_path):
         pass
@@ -99,8 +104,12 @@ def decompile_single_file(file_path, generated_file_path=''):
                 subprocess.getstatusoutput(time_cmd + Config.RetDec_decompile_cmd +
                                            fname + ' -o ' +
                                            generated_file_path)
-        elif Config.IDA_test:
+        elif Config.IDA_test:  # only in Windows
             status, output = IDA_decompile.decompile(fname, generated_file_path)
+        elif Config.R2_test:
+            status, output = subprocess.getstatusoutput(time_cmd + Config.Radare2_decompile_cmd +
+                                                        fname + ' ' + generated_file_path)
+
         # It seems JEB3 returns 0 even
         # when it failed to generate decompiled code file
         isExists = os.path.exists(generated_file_path)
@@ -161,6 +170,9 @@ def add_extra_declarations(code_txt, error_msg):
         if __name__ == '__main__':
             print('var name: ', var_name)
         var_list.append(var_name)
+    if len(var_list)==0:
+        return code_txt
+
     # new declaration stmt
     decl_txt = '    unsigned int '
     for name in var_list:
@@ -177,6 +189,26 @@ def add_extra_declarations(code_txt, error_msg):
         pos = m.end()
         new_txt = code_txt[:pos] + decl_txt + code_txt[pos:]
         return new_txt
+
+
+def remove_unclear_member(code_txt, error_msg):
+    new_txt = code_txt
+    member_list = []
+    reg_exp = r"error: request for member ‘([a-z0-9_]+)’ in something not a structure or union"  # match member name
+    pattern = re.compile(reg_exp)
+    matches = pattern.finditer(error_msg)
+    # get all undeclared vars
+    for m in matches:
+        var_name = m.group(1)
+
+        if __name__ == '__main__':
+            print('var name: ', var_name)
+        member_list.append(var_name)
+    # simply delete unclear members
+    for name in member_list:
+        member_name = '.' + name
+        new_txt = code_txt.replace(member_name, '')
+    return new_txt
 
 
 def recompile_single_file(source_file='', decompiled_file='', func_name='',
@@ -202,6 +234,7 @@ def recompile_single_file(source_file='', decompiled_file='', func_name='',
             # if error: ‘v45’ undeclared
             # try to add declaration then try again
             new_code = add_extra_declarations(new_code, output)
+            new_code = remove_unclear_member(new_code, output)
             f = open(new_file_name, 'w')
             f.write(new_code)
             f.close()
@@ -225,6 +258,8 @@ def batch_recompile(dir):
         if os.path.isdir(file_path):
             pass
         elif extname == '.c' and fname.endswith('JEB3'):
+            if os.path.exists(fname[:-5]+'_new'):
+                continue
             status, output = recompile_single_file(fname[:-5]+'.c', file_path, 'func_1', 1, 0)
             if status !=0:
                 print(file, 'recompilation failed\n')
@@ -267,6 +302,9 @@ def recompilation_test(running_dir, generate=1, compile=1, decompile=1):
                 decompiled_file_path = file_path[:-2] + Config.RetDec_suffix  # '_retdec.c'
             elif Config.IDA_test:
                 decompiled_file_path = file_path[:-2] + Config.IDA_suffix  # '_ida.c'
+            elif Config.R2_test:
+                generated_file_path = file_path + Config.Radare2_suffix  # '_r2.c'
+
             if os.path.exists(decompiled_file_path):
                 continue
 
@@ -355,6 +393,6 @@ if __name__ == '__main__':
     # batch_compile('./tmp_packed_store/packet/test_cases/csmith_files/')
     # batch_decompile('./tmp_packed_store/packet/test_cases/csmith_files/')
     # batch_recompile('./tmp_packed_store/packet/test_cases/csmith_files/')
-    # batch_compile('./tmp_packed_store/packet/test_cases/emi_files/')
+    batch_compile('./tmp_packed_store/packet/test_cases/emi_files/')
     batch_decompile('./tmp_packed_store/packet/test_cases/emi_files/')
     batch_recompile('./tmp_packed_store/packet/test_cases/emi_files/')
