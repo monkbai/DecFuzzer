@@ -1,5 +1,4 @@
-import re
-from replacer import *
+from src.replacer import *
 
 
 class SourceFileModifier:

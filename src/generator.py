@@ -3,12 +3,7 @@ import subprocess
 import os
 import re
 
-import replacer
-import Config
-
-import checker
-import IDA_decompile
-import R2_decompile
+from src import IDA_decompile, replacer, Config
 
 file_num = 0
 
@@ -26,17 +21,6 @@ def gen_single_file(file_name):
     return status
 
 
-# wasted
-def batch_generate(outdir, num):
-    global file_num
-    old_num = file_num
-    for i in range(num):
-        status = gen_single_file(outdir + 'test'+str(file_num)+'.c')
-        if status == 0:
-            file_num += 1
-    return file_num - old_num
-
-
 # compile_cmd = 'gcc -fno-stack-protector -no-pie -O0 -Wall -m32 '
 compile_cmd = Config.compile_cmd
 runtime_dir = Config.runtime_dir
@@ -52,7 +36,8 @@ def compile_single_file(file_path):
                                        ' -o ' + os.path.splitext(file_path)[0] +
                                        ' ' + file_path)
         if status != 0:
-            print(output)
+            #print(output)
+            print(file_path + ' compilation failed')
             return status, output
         else:
             print(file_path + ' compiled')
@@ -76,7 +61,7 @@ def batch_compile(src_dir):
 
 
 time_cmd = Config.time_cmd
-decompile_cmd = Config.decompile_cmd
+# decompile_cmd = Config.decompile_cmd
 
 
 def decompile_single_file(file_path, generated_file_path=''):
@@ -134,9 +119,9 @@ def decompile_single_file(file_path, generated_file_path=''):
             if output_list[2].find('sys') != -1:
                 time_str = output_list[2].split(' ')[1].strip(' s\n')
                 sys_time = float(time_str)
-            print('real time:', real_time)
-            print('user time:', user_time)
-            print('sys time:', sys_time)
+            #print('real time:', real_time)
+            #print('user time:', user_time)
+            #print('sys time:', sys_time)
             return 0, real_time, user_time, sys_time
 
 

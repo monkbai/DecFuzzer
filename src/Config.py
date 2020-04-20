@@ -12,12 +12,6 @@ IDA_test = False
 R2_test = True
 
 time_cmd = "time -p "
-# decompile_cmd may be not used anymore
-decompile_cmd = ("'/home/fuzz/Documents/jeb-pro-3.0-beta.8/jeb_linux.sh' "
-                 " -c --srv2 --script='/home/fuzz/Documents/jeb-pro-3.0-beta.8/DecompileFile.py' "
-                 " -- "
-                 )
-
 
 JEB3_suffix = '_JEB3.c'
 RetDec_suffix = '_retdec.c'
@@ -32,6 +26,7 @@ RetDec_decompile_cmd = (r"'/home/fuzz/Documents/retdec-install/bin/retdec-decomp
                         )
 Radare2_decompile_cmd = r"python3 R2_decompile.py "
 
+# this csmith command is not used in the Artifact Evaluation Package
 csmith_cmd = ("/home/fuzz/Documents/csmith-2.3.0/src/csmith"
               " --no-arrays"
               " --no-structs"
@@ -44,7 +39,8 @@ csmith_cmd = ("/home/fuzz/Documents/csmith-2.3.0/src/csmith"
               )
 
 compile_cmd = 'gcc -fno-stack-protector -no-pie -O0 -w -m32 '
-runtime_dir = '/home/fuzz/Documents/Fuzzer_3_17/tmp/src_code/runtime/ '
+# Absolute path to csmith runtime directory
+runtime_dir = '/home/fuzz/Documents/DecFuzzer/runtime/ '
 
 # CFG_measurer
 gcc_cfg_option = ' -fdump-tree-cfg '
@@ -60,3 +56,18 @@ def set_live_code_mutate(value):
     global probability_live_code_mutate
     probability_live_code_mutate = value
 
+
+def set_decompiler(tool=''):
+    global RetDec_test, JEB3_test, IDA_test, R2_test
+    RetDec_test = False
+    JEB3_test = False
+    IDA_test = False
+    R2_test = False
+    if tool.startswith('retdec'):
+        RetDec_test = True
+    elif tool.startswith('jeb'):
+        JEB3_test = True
+    elif tool.startswith('ida'):
+        IDA_test = True
+    elif tool.startswith('r2'):
+        R2_test = True

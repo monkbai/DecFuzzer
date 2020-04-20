@@ -2,7 +2,7 @@ import os
 from threading import Timer
 from subprocess import Popen, PIPE, getstatusoutput
 
-import Config
+from src import Config
 
 timeout_sec = Config.timeout_sec
 
@@ -65,9 +65,9 @@ def compare_two_prog(prog1, prog2, result_dir):
         print(prog2 + ' outputs [' + str(stdout2) + ']')
         # add error information
         f.write(prog1 + '     errors [' + str(stderr1) + ']\n')
-        print(prog1 + '     errors [' + str(stderr1) + ']')
+        #print(prog1 + '     errors [' + str(stderr1) + ']')
         f.write(prog2 + ' errors [' + str(stderr2) + ']\n')
-        print(prog2 + ' errors [' + str(stderr2) + ']')
+        #print(prog2 + ' errors [' + str(stderr2) + ']')
         f.close()
         # copy their source code to result directory
         status, output = \
@@ -82,9 +82,9 @@ def compare_two_prog(prog1, prog2, result_dir):
         print('Found discrepancy:')
         # add output
         f.write(prog1 + '     outputs [' + str(stdout1) + ']\n')
-        print(prog1 + '     outputs [' + str(stdout1) + ']')
+        #print(prog1 + '     outputs [' + str(stdout1) + ']')
         f.write(prog2 + ' outputs [' + str(stdout2) + ']\n')
-        print(prog2 + ' outputs [' + str(stdout2) + ']')
+        #print(prog2 + ' outputs [' + str(stdout2) + ']')
 
         f.write(prog1 + '     errors [' + str(stderr1) + ']\n')
         print(prog1 + '     errors [' + str(stderr1) + ']')
@@ -194,15 +194,3 @@ def batch_compare(dir):
                 print(org_name + ' errors [' + stderr1 + ']')
                 print(file_path + ' errors [' + stderr2 + ']')
 
-
-def test():
-    result_dir = './tmp/src_code/result/'
-    result_log = os.path.join(result_dir, 'result_test.txt')
-    f = open(result_log, 'a')
-    f.write('\nFound discrepancy:\n')
-    f.close()
-
-
-if __name__ == '__main__':
-    for i in range(10):
-        test()

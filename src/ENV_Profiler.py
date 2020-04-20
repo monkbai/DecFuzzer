@@ -6,10 +6,9 @@ import threading
 import copy
 from ctypes import *
 
-import replacer
+from src import replacer, Config
 # from EMI_generator import EMIGenerator
-from ContextTable import ContextTable
-import Config
+from src.ContextTable import ContextTable
 
 
 class ENV:
@@ -838,76 +837,3 @@ class Synthesizer:
 
         return c_type_var, sign_flag
 
-'''
-def test_profile():
-    emi = EMIGenerator('./tmp/src_code/csmith_test_1416_m.c')
-    emi.gen_coverage_file()
-    cov_txt = emi.cov_txt
-    profiler = Profiler(cov_txt=cov_txt, src_txt=emi.source_code_txt)
-    profiler.profile()
-    for env in profiler.env_list:
-        print('line_num', env.line_num)
-        names = list(env.env_var_dict.keys())
-        for var_name in names:
-            print(var_name, env.env_var_dict[var_name])
-        # test gen_pred
-        print('True4', Synthesizer.syn_pred(env, True, 4))
-        print('False3', Synthesizer.syn_pred(env, False, 3))
-        print('True2', Synthesizer.syn_pred(env, True, 2))
-        print('False1', Synthesizer.syn_pred(env, False, 1))
-        syn = Synthesizer()
-        print('Expr 1:', syn.syn_expr(env))
-        print('Expr 2:', syn.syn_expr(env))
-        print('Expr 3:', syn.syn_expr(env))
-'''
-
-
-def ctypes_test():
-    var1 = c_uint16(65296)
-    var2 = c_uint32(1075680059)
-    var2 = c_uint32(not var2.value)
-    print(var2.value)
-    var2 = c_uint32(~ var2.value)
-    print(var2.value)
-    var2 = c_uint32(var1.value <= var2.value)
-    print(var2.value)
-
-    var1 = c_uint16(65296)
-    var2 = c_uint32(1075680059)
-    print(not var2.value)
-    print(~(not var2.value))
-    print(var1.value)
-    print(var1.value <= (~(not var2.value)))
-    var1 = c_uint16(var1.value <= (~(not var2.value)))
-
-    print('test unary')
-    var1 = c_uint16(65296)
-    print(-var1.value)
-    print(~var1.value)
-    var1 = c_uint16(-var1.value)
-    print(var1.value)
-    print(-var1.value)
-    print(~var1.value)
-
-
-if __name__ == '__main__':
-    # bo = True
-    # print(bo)
-    # print(bool(1-bo))
-    # bo = bool(1-bo)
-    # print(bool(1 - bo))
-
-    # for i in range(30):
-    #     print(random.randint(-10, 10), end=' ')
-
-    # print(not 16)
-    # print(not 0)
-    # print(~ 16)
-    # print(~ -17)
-    # print(~ 0)
-    # print(~ -1)
-
-    # test_profile()
-
-    ctypes_test()
-    pass
