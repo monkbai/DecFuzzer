@@ -60,7 +60,7 @@ class Profiler:
         4. collect all information and generate ENVs for every selected stmts
     """
     gcc_cmd = Config.compile_cmd
-    include_csmith_runtime = " -I " + Config.runtime_dir
+    include_csmith_runtime = " -I " + Config.runtime_dir + ' '
 
     cov_txt = ''
     source_code_txt = ''

@@ -1,5 +1,22 @@
-# running_directory = './tmp_retdec_test/csmith_files'  # where are test cases
 
+####################################################################################
+#
+# Please update these absolute paths below before use
+#
+####################################################################################
+
+# Absolute path to csmith runtime directory
+runtime_dir = '/home/homework/DecFuzzer/runtime'
+RetDec_absolute_path = '/home/homework/retdec/bin/retdec-decompiler.py'
+JEB3_absolute_path = '/home/fuzz/Documents/jeb-pro-3.0-beta.8/jeb_linux.sh'  #
+csmith_absolute_path = '/home/fuzz/Documents/csmith-2.3.0/src/csmith'  #
+
+
+####################################################################################
+#
+# Please do not modify anything below unless you are clear about what is it used for
+#
+####################################################################################
 probability_live_code_mutate = 0.3
 
 timeout_sec = 2
@@ -18,16 +35,18 @@ RetDec_suffix = '_retdec.c'
 IDA_suffix = '_ida.c'
 Radare2_suffix = '_r2.c'
 
-JEB3_decompile_cmd = ("'/home/fuzz/Documents/jeb-pro-3.0-beta.8/jeb_linux.sh' "
+JEB3_decompile_cmd = (JEB3_absolute_path + " "
                       " -c --srv2 --script='/home/fuzz/Documents/jeb-pro-3.0-beta.8/DecompileFile.py' "
                       " -- "
                       )
-RetDec_decompile_cmd = (r"'/home/fuzz/Documents/retdec-install/bin/retdec-decompiler.py' --cleanup "
+
+RetDec_decompile_cmd = (RetDec_absolute_path + r" --cleanup "
                         )
-Radare2_decompile_cmd = r"python3 R2_decompile.py "
+
+Radare2_decompile_cmd = r"python3 ./src/R2_decompile.py "
 
 # this csmith command is not used in the Artifact Evaluation Package
-csmith_cmd = ("/home/fuzz/Documents/csmith-2.3.0/src/csmith"
+csmith_cmd = (csmith_absolute_path + " "
               " --no-arrays"
               " --no-structs"
               " --no-unions"
@@ -39,8 +58,7 @@ csmith_cmd = ("/home/fuzz/Documents/csmith-2.3.0/src/csmith"
               )
 
 compile_cmd = 'gcc -fno-stack-protector -no-pie -O0 -w -m32 '
-# Absolute path to csmith runtime directory
-runtime_dir = '/home/fuzz/Documents/DecFuzzer/runtime/ '
+
 
 # CFG_measurer
 gcc_cfg_option = ' -fdump-tree-cfg '

@@ -222,7 +222,7 @@ class StmtWithContext:
 class EMIGenerator:
 
     gcc_cmd = "gcc -fno-stack-protector -no-pie -O0 -m32 --coverage "
-    include_csmith_runtime = " -I " + Config.runtime_dir
+    include_csmith_runtime = " -I " + Config.runtime_dir + ' '
     gcov_cmd = "gcov -m "
 
     timeout_sec = 3

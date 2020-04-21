@@ -548,6 +548,7 @@ def R2_modifier_before(txt):
     txt = R2Modifier.modify_sym(txt)
     txt = R2Modifier.modify_undefined(txt, 'undefined4')
     txt = R2Modifier.modify_undefined(txt, 'undefined2')
+    txt = R2Modifier.modify_undefined(txt, 'undefined')
 
     txt = txt.replace('bool', 'int')
     txt = txt.replace('true', '1')

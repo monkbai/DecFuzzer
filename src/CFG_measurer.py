@@ -79,7 +79,7 @@ class CFGInfo:
     compile_cmd = Config.compile_cmd
     # running_directory = Config.running_directory  # not used?
     # runtime_dir = ' -I /home/fuzz/Documents/Fuzzer_3_17/tmp/src_code/runtime/ '
-    runtime_dir = ' -I ' + Config.runtime_dir
+    runtime_dir = ' -I ' + Config.runtime_dir + ' '
     gcc_cfg_option = Config.gcc_cfg_option
     cfg_suffix = Config.cfg_suffix
 

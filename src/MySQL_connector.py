@@ -6,8 +6,8 @@ import pymysql
 
 class MysqlConncetor:
     host = 'localhost'
-    user = "root"
-    passwd = "123456"
+    user = "debian-sys-maint"
+    passwd = "dPqHc13F6ajJ3LPw"
 
     db_name = 'CODE_CORPUS'
 
