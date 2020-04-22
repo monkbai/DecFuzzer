@@ -272,6 +272,23 @@ def batch_recompile_and_test(current_files_dir, EMI_variant_dir=''):
     pass
 
 
+def create_directory(directory):
+    if os.path.exists(directory):
+        return
+    os.mkdir(directory)
+
+
+def prepare_dirs(files_dir, emi=False):
+    create_directory(files_dir)
+    error_dir = os.path.join(files_dir, 'error/')
+    create_directory(error_dir)
+    result_dir = os.path.join(files_dir, 'result/')
+    create_directory(result_dir)
+    if emi:
+        emi_dir = os.path.join(files_dir, 'emi/')
+        create_directory(emi_dir)
+
+
 # fuzzing test on CSmith generated files,
 # generating EMI variants
 # for ISSTA'20 Artifact Evaluation
@@ -280,7 +297,8 @@ def seed_test_AE(files_dir, emi_dir, config_file):
        emi_dir: the directory to store generated EMI variants
        config_file: path to configure file (used in EMI mutation)
     """
-
+    prepare_dirs(files_dir, emi=False)
+    prepare_dirs(emi_dir, emi=False)
     for root, dirs, files in os.walk(files_dir):
         files.sort()
         for f in files:
@@ -305,7 +323,7 @@ def emi_test_AE(files_dir, config_file):
     """files_dir: the emi files directory
        config_file: path to configure file (used in EMI mutation)
     """
-
+    prepare_dirs(files_dir, emi=False)
     for root, dirs, files in os.walk(files_dir):
         files.sort()
         for f in files:

@@ -12,7 +12,7 @@ the same OS system.
 * `seed_for_retdec` and  `seed_for_r2`: seeds for EMI testing
 
 ## 2. Code Structure
-* `fuzzer.py`: main component, intializing a fuzzing test campaign by calling functions in this script
+* `fuzzer.py`: main component, main component, intializing a fuzzing test campaign by calling functions in this script
 * `generator.py`: to compile and decompile files
     * `R2_decompile.py`: to decompile the Radare2/Ghidra plugin
     * `IDA_decompile.py` and `idapy_decompile.py`: to decompile files with IDA (not used in this Artifact Evaluation Package; see clarifications below)
@@ -88,6 +88,8 @@ To install Radare2:
 
     git clone https://github.com/radareorg/radare2
     cd radare2 ; sys/install.sh ; cd ..
+
+We use commit 06ab29b93cb0168a8ec1cb39f860c6b990678838 when writing this README.
 
 To further install the Ghidra decompiler plugin (named r2ghidra):
 
