@@ -3,27 +3,28 @@
 ISSTA'20 Artifact for: `How Far We Have Come: Testing Decompilation Correctness of C Decompilers`
 
 ## 0. Environment
-The whole experiment was conducted on `Ubuntu 18.04`, the following installation instructions also assume working on Ubuntu system, so we recommend running this experiment on `Ubuntu` or other `*nix` systems.
+Our experiment was conducted on `64-bit Ubuntu 18.04`. We recommend to setup on
+the same OS system. 
 
 ## 1. Project Structure
-* ./src/: source code directory
-* ./runtime/: CSmith runtime library
-* ./seed_for_retdec/ & ./seed_for_r2/: seed test files
+* `src/`: source code directory
+* `runtime/`: CSmith runtime library
+* `seed_for_retdec` and  `seed_for_r2`: seeds for EMI testing
 
 ## 2. Code Structure
-* *fuzzer.py*: main component, intialize a fuzzing test by running this script
-* *generator.py*: to compile and decompile files
-    * *IDA_decompile.py* and *idapy_decompile.py*: to decompile files with IDA (not used in this Artifact Evaluation Package)
-    * *R2_decompile.py*: to decompile with Radare2_ghidra_plugin
-* *EMI_generator.py*: to generate EMI variants
-    * *MySQL_connector.py*: to connect MySQL
-    * *CFG_measurer.py*: to measure CFG distance of two programs (used for EMI mutation)
-    * *ENV_Profiler.py*: to provide live code EMI mutation function
-    * *ContextTable.py*: context structure
-* *replacer.py*: to replace main() in original code with decompilation result
-    * *modifier.py*: to replace custom macros in decompilation results
-* *checker.py*: to compare the output of the two programs for consistency
-* *Config.py*: constant values/strings/paths
+* `fuzzer.py`: main component, intializing a fuzzing test campaign by running this script
+* `generator.py`: to compile and decompile files
+    * `R2_decompile.py`: to decompile the Radare2/Ghidra plugin
+    * `IDA_decompile.py` and `idapy_decompile.py`: to decompile files with IDA (not used in this Artifact Evaluation Package; see clarifications below)
+* `EMI_generator.py`: to generate EMI variants
+    * `MySQL_connector.py`: to connect MySQL, which is used in the implementation of EMI mutation
+    * `CFG_measurer.py`: to measure CFG distance of two programs (used for EMI mutation)
+    * `ENV_Profiler.py`: to provide live code EMI mutation function
+    * `ContextTable.py`: context structure
+* `replacer.py`: to replace main() in original code with decompilation result
+    * `modifier.py`: to replace custom macros in decompilation results
+* `checker.py`: to compare the output of the two programs for consistency
+* `Config.py`: constant values/strings/paths
 
 ## 3. Installation of dependencies
 
@@ -35,14 +36,18 @@ The whole experiment was conducted on `Ubuntu 18.04`, the following installation
     sudo apt install flex bison
     sudo apt install pkg-config
 
-**Cmake 3.12** or later is needed to build r2ghidra-dec, to install latest version of Cmake, we download source code from [here](https://github.com/Kitware/CMake/releases/download/v3.16.6/cmake-3.16.6.tar.gz), then build it following instructions on their [website](https://cmake.org/install/), like:
+`Cmake` version 3.12 or later is needed to build r2ghidra-dec. To install latest
+version of Cmake, download source code from
+[here](https://github.com/Kitware/CMake/releases/download/v3.16.6/cmake-3.16.6.tar.gz),
+and then build it following instructions on their
+[website](https://cmake.org/install/), like:
 
     ./bootstrap
     make 
     sudo make install
 
 ### 3.1. MySQL
-MySQL is used in EMI mutation, to install it on Ubuntu:
+MySQL is used in EMI mutation. To install it on Ubuntu:
 
     apt-get install mysql-server
 
@@ -55,54 +60,65 @@ Then start mysql service:
     sudo cat /etc/mysql/debian.cnf
 
 ### 3.2. PyMySQL
+
 To install the MySQL Driver for Python3:
 
+    apt-get install python3-pip
     pip3 install PyMySQL
 
-If pip3 is not installed, you can install it by:
-
-    apt-get install python3-pip
 
 ### 3.3. Decompilers
-We tested 4 decompilers:
+
+As reported in the paper, four decompilers are tested as follows:
+
 * IDA Pro: [https://www.hex-rays.com/products/ida/](https://www.hex-rays.com/products/ida/ )
 * JEB3: [https://www.pnfsoftware.com/](https://www.pnfsoftware.com/)
 * RetDec: [https://retdec.com/](https://retdec.com/)
 * Radare2: [https://www.radare.org/n/radare2.html](https://www.radare.org/n/radare2.html) 
 (we tested the r2ghidra plugin of radare2, more specifically)
 
-Since *IDA Pro* and *JEB3* are expensive commercial tools, we would only show how to test the two opensource tools *RetDec* and *r2ghidra* plugin of *radare2* in the experiment below. 
-You can test the two commercial decompilers in the same way if you have license.
+We note that *IDA Pro* and *JEB3* are commercial tools, and we decide to not
+provide them in this artifact evaluation phase. Instead, we provide instructions
+to setup the other two free decompilers *RetDec* and *Radare2* with *Ghidra*
+plugin. We assure that two commercial decompilers are tested in exactly the same way.
 
 #### 3.3.1. Radare2 and r2ghidra 
-To install radare2 from git:
+
+To install Radare2:
 
     git clone https://github.com/radareorg/radare2
     cd radare2 ; sys/install.sh ; cd ..
 
-To install the decompiler plugin r2ghidra after installation of radare2:
+To further install the Ghidra decompiler plugin (named r2ghidra):
 
     r2pm update
     r2pm -i r2ghidra-dec
 
-Then we need to install r2pipe to use the decompiler script *R2_decompile.py*:
+Then we need to install r2pipe to use our decompiler script *R2_decompile.py*:
 
     pip3 install r2pipe
 
 #### 3.3.2. RetDec
-To install RetDec, we recommend to download and unpack [pre-built package](https://github.com/avast/retdec/releases) to save time, you can also build from source code following the instructions on their [github page](https://github.com/avast/retdec). (The size of unpacked RetDec is about 5.5 GB.)
 
-Please download and unpack the 64 bits version for Ubuntu at [here](https://github.com/avast/retdec/releases/download/v4.0/retdec-v4.0-ubuntu-64b.tar.xz), then you can find the `retdec-decompiler.py` file under `retdec/bin/`. 
+To install RetDec, we recommend to download and unpack [pre-built
+package](https://github.com/avast/retdec/releases) to save time, you can also
+build from source code following the instructions on their [github
+page](https://github.com/avast/retdec) (note that the size of unpacked RetDec is
+about 5.5 GB.)
+
+Download and unpack the pre-built RetDec (ver. 4.0) for Ubuntu at
+[here](https://github.com/avast/retdec/releases/download/v4.0/retdec-v4.0-ubuntu-64b.tar.xz),
+then you can use `retdec-decompiler.py` under `retdec/bin/`.
 
 **Remember to update the absolute path to `retdec-decompiler.py` in _Config.py_.** For example:
 
     RetDec_absolute_path = '/home/fuzz/Documents/retdec-install/bin/retdec-decompiler.py'
 
 
-
 ## 4. Reproducing experimental results
 
 ### 4.1. Setup
+
 Clone this repository
 
     git clone https://github.com/monkbai/DecFuzzer.git
@@ -112,13 +128,28 @@ Then do not forget to **update the absolute path to csmith runtime `runtime_dir`
     runtime_dir = '/home/fuzz/Documents/DecFuzzer/runtime/'
 
 ### 4.3. Reproducing experimental results
+
     python3 run.py
 
-The script `run.py` will run fuzzing test on *RetDec* and *r2ghidra* separately. It will first test 100 csmith generated programs in directory `./seed_for_[retdec|r2]`, the result will be stored in `./seed_for_[retdec|r2]/result/` and `./seed_for_[retdec|r2]/error/`, the EMI variants will be stored in `./seed_for_[retdec|r2]/emi/`.
+The script `run.py` will run fuzzing test on *RetDec* and *r2ghidra*, separately.
+It will first test 100 csmith generated programs in directory
+`./seed_for_[retdec|r2]`, the result will be stored in
+`./seed_for_[retdec|r2]/result/` and `./seed_for_[retdec|r2]/error/`, the EMI
+variants will be stored in `./seed_for_[retdec|r2]/emi/`.
 
-Then it will test all generated EMI variants, the results are stored in a similar manner.
+Then it will test all generated EMI variants, the results are stored in a
+similar manner.
 
-### 4.4. Result example 
+It will takes about 30 minutes to finish the whole process. The results should be a subset of the full experimental results in our paper since the set of seed files is a subset of whole seed files. 
+
+There should be 12 error cases in directory `./seed_for_retdec/error/` and 26 inconsistent results cases in directory `./seed_for_retdec/result/` for RetDec. for all the 12 error cases RetDec failed to recover function prototypes and parameters, just the same as we reported in Section 5.5 in our paper.
+
+In the case of Radare2, there are 10 inconsistent results cases and 0 error case, which is consistent with our conclusion in Table 3 in our paper. It shows that the decompiler component of Ghidra is pretty mature and it is possible to safely remove recompilation faliure from decompilation results.
+
+It is time-consuming to tell the root cause from a inconsistent results case, but if you look deep into it, you will obtain the same results as our paper. Note that the results of EMI mutations are random, so we cannot guarantee the same result for EMI variants.
+
+### 4.4. Interpret Result
+
 For example, if a C file `./10.c` is to be tested, it will be compiled first:
 
     ./10.c ==compile==> ./10
@@ -134,4 +165,3 @@ We try to generate a new compilable file by replacing `func_1` function in origi
 If recompilation is failed, the source code is stored in `./error/` and error information is logged in `./error/error_log.txt`.
 
 Finally, we compare the outputs of `./10` and `./10_new`, if it turns out differently, this file will be store in `./result/` and logged in `./result/result_log.txt`.
-
