@@ -134,7 +134,7 @@ Then do not forget to **update the absolute path to csmith runtime `runtime_dir`
     python3 run.py
 
 The script `run.py` will run fuzzing test on *RetDec* and *r2ghidra*, separately.
-It will first test 100 csmith generated programs in directory
+It will first test 1000 csmith generated programs in directory
 `./seed_for_[retdec|r2]`, the result will be stored in
 `./seed_for_[retdec|r2]/result/` and `./seed_for_[retdec|r2]/error/`, the EMI
 variants will be stored in `./seed_for_[retdec|r2]/emi/`.
@@ -142,15 +142,37 @@ variants will be stored in `./seed_for_[retdec|r2]/emi/`.
 Then it will test all generated EMI variants, the results are stored in a
 similar manner.
 
-It will takes about 30 minutes to finish the whole process. The results should be a subset of the full experimental results in our paper since the set of seed files is a subset of whole seed files. 
+It will takes several hours to finish the whole process. While it's unlikely to get exactly the same number (since certain randomness are involved in generating EMI mutations), it should give a very close number reported in Table 3 in our paper.
 
-There should be 12 error cases in directory `./seed_for_retdec/error/` and 26 inconsistent results cases in directory `./seed_for_retdec/result/` for RetDec. for all the 12 error cases RetDec failed to recover function prototypes and parameters, just the same as we reported in Section 5.5 in our paper.
+### 4.4. Access to data
 
-In the case of Radare2, there are 10 inconsistent results cases and 0 error case, which is consistent with our conclusion in Table 3 in our paper. It shows that the decompiler component of Ghidra is pretty mature and it is possible to safely remove recompilation faliure from decompilation results.
+Meanwhile, for the ease of understanding/checking our setup, We also provide all csmith generated programs and EMI mutations which can be used to re-produce findings in Table 3, you can download them from [here](https://www.dropbox.com/sh/kqw7e19snfeukai/AADHZ45TAL9Kxi7v9nmdXfLCa?dl=0).
 
-It is time-consuming to tell the root cause from a inconsistent results case, but if you look deep into it, you will obtain the same results as our paper. Note that the results of EMI mutations are random, so we cannot guarantee the same result for EMI variants.
+You can reproduce the experiment results using `./reproduce.py` script we provided. It takes two steps:
 
-### 4.4. Interpret Result
+**Step 1**
+
+Put all the C source files to be tested in a directory.
+
+**Step 2**
+
+Run `./reproduce.py` like:
+
+    python3 ./reproduce.py --decompiler <decompiler name> --files_dir <directory to C files> --emi_dir <directory to store generated EMI variants> --EMI
+
+Or
+
+    python3 ./reproduce.py --decompiler <decompiler name> --files_dir <directory to C files>
+
+There are four options for this `--decompiler` parameter: retdec, r2, jeb and ida. The `--EMI` parameter represents enable generating EMI variants.
+
+For example:
+
+    python3 ./reproduce.py --decompiler retdec --files_dir ./seed_for_retdec
+    python3 ./reproduce.py --decompiler r2 --files_dir ./seed_for_r2 --emi_dir ./seed_for_r2/emi --EMI
+
+
+### 4.5. Interpret Result
 
 For example, if a C file `./10.c` is to be tested, it will be compiled first:
 
