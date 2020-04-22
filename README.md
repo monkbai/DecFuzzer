@@ -12,7 +12,7 @@ the same OS system.
 * `seed_for_retdec` and  `seed_for_r2`: seeds for EMI testing
 
 ## 2. Code Structure
-* `fuzzer.py`: main component, intializing a fuzzing test campaign by running this script
+* `fuzzer.py`: main component, intializing a fuzzing test campaign by calling functions in this script
 * `generator.py`: to compile and decompile files
     * `R2_decompile.py`: to decompile the Radare2/Ghidra plugin
     * `IDA_decompile.py` and `idapy_decompile.py`: to decompile files with IDA (not used in this Artifact Evaluation Package; see clarifications below)
