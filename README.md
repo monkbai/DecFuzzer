@@ -3,19 +3,19 @@
 ISSTA'20 Artifact for: `How Far We Have Come: Testing Decompilation Correctness of C Decompilers`
 
 ## 0. Environment
-Our experiment was conducted on `64-bit Ubuntu 18.04`. We recommend to setup on
+Our experiment was conducted on `64-bit Ubuntu 18.04`. We recommend to set up on
 the same OS system. 
 
 ## 1. Project Structure
 * `src/`: source code directory
 * `runtime/`: CSmith runtime library
-* `seed_for_retdec` and  `seed_for_r2`: seeds for EMI testing
+* `seed_for_retdec` and  `seed_for_r2`: sample seeds for EMI testing (see clarifications below).
 
 ## 2. Code Structure
-* `fuzzer.py`: main component, main component, intializing a fuzzing test campaign by calling functions in this script
-* `generator.py`: to compile and decompile files
-    * `R2_decompile.py`: to decompile the Radare2/Ghidra plugin
-    * `IDA_decompile.py` and `idapy_decompile.py`: to decompile files with IDA (not used in this Artifact Evaluation Package; see clarifications below)
+* `fuzzer.py`: main component to initialize a fuzzing test campaign by calling functions in this script
+* `generator.py`: to compile and decompile files (to interact with Radare2 and IDA-Pro, we provide two scripts as follows; the other two decompilers can be used directly via command line)
+    * `R2_decompile.py`: to decompile with Radare2/Ghidra 
+    * `IDA_decompile.py` and `idapy_decompile.py`: to decompile with IDA (IDA-Pro is not provided in this Artifact Evaluation Package; see clarifications below)
 * `EMI_generator.py`: to generate EMI variants
     * `MySQL_connector.py`: to connect MySQL, which is used in the implementation of EMI mutation
     * `CFG_measurer.py`: to measure CFG distance of two programs (used for EMI mutation)
@@ -37,10 +37,8 @@ the same OS system.
     sudo apt install pkg-config
 
 `Cmake` version 3.12 or later is needed to build r2ghidra-dec. To install latest
-version of Cmake, download source code from
-[here](https://github.com/Kitware/CMake/releases/download/v3.16.6/cmake-3.16.6.tar.gz),
-and then build it following instructions on their
-[website](https://cmake.org/install/), like:
+version of Cmake, download source code from [here](https://github.com/Kitware/CMake/releases/download/v3.16.6/cmake-3.16.6.tar.gz),
+and then build it following instructions on their [website](https://cmake.org/install/):
 
     ./bootstrap
     make 
@@ -75,12 +73,9 @@ As reported in the paper, four decompilers are tested as follows:
 * JEB3: [https://www.pnfsoftware.com/](https://www.pnfsoftware.com/)
 * RetDec: [https://retdec.com/](https://retdec.com/)
 * Radare2: [https://www.radare.org/n/radare2.html](https://www.radare.org/n/radare2.html) 
-(we tested the r2ghidra plugin of radare2, more specifically)
+(we tested the r2ghidra plugin of Radare2, more specifically)
 
-We note that *IDA Pro* and *JEB3* are commercial tools, and we decide to not
-provide them in this artifact evaluation phase. Instead, we provide instructions
-to setup the other two free decompilers *RetDec* and *Radare2* with *Ghidra*
-plugin. We assure that two commercial decompilers are tested in exactly the same way.
+We note that *IDA Pro* and *JEB3* are commercial tools, and we decide to not provide them in this artifact evaluation phase. Instead, we provide instructions to setup the other two free decompilers *RetDec* and *Radare2* with *Ghidra* plugin. We assure that two commercial decompilers are tested in exactly the same way.
 
 #### 3.3.1. Radare2 and r2ghidra 
 
@@ -129,63 +124,77 @@ Then do not forget to **update the absolute path to csmith runtime `runtime_dir`
 
     runtime_dir = '/home/fuzz/Documents/DecFuzzer/runtime/'
 
-### 4.3. Reproducing experimental results
+### 4.2. Reproducing experimental results
 
     python3 run.py
 
-The script `run.py` will run fuzzing test on *RetDec* and *r2ghidra*, separately.
-It will first test 1000 csmith generated programs in directory
-`./seed_for_[retdec|r2]`, the result will be stored in
-`./seed_for_[retdec|r2]/result/` and `./seed_for_[retdec|r2]/error/`, the EMI
-variants will be stored in `./seed_for_[retdec|r2]/emi/`.
+The script `run.py` will run fuzzing test on *RetDec* and *r2ghidra*, separately. It will first test 1000 csmith generated programs in directory `./seed_for_[retdec|r2]`, the result will be stored in `./seed_for_[retdec|r2]/result/` and `./seed_for_[retdec|r2]/error/`, the EMI variants will be stored in `./seed_for_[retdec|r2]/emi/`.
 
-Then it will test all generated EMI variants, the results are stored in a
-similar manner.
+Then it will test all generated EMI variants, the results are stored in a similar manner.
 
-It will takes several hours to finish the whole process. While it's unlikely to get exactly the same number (since certain randomness are involved in generating EMI mutations), it should give a very close number reported in Table 3 in our paper.
+It will take several hours to finish the whole process. While it's unlikely to get exactly the same number (since randomness is involved in generating EMI mutations), it should give a very close number reported in Table 3 in our paper.
 
 ### 4.4. Access to data
 
-Meanwhile, for the ease of understanding/checking our setup, We also provide all csmith generated programs and EMI mutations which can be used to re-produce findings in Table 3, you can download them from [here](https://www.dropbox.com/sh/kqw7e19snfeukai/AADHZ45TAL9Kxi7v9nmdXfLCa?dl=0).
+Meanwhile, for the ease of understanding/checking our results reported in the paper, We also provide all Csmith generated programs and EMI mutations which can be used to re-produce findings in Table 3, you can download them from [here](https://www.dropbox.com/sh/kqw7e19snfeukai/AADHZ45TAL9Kxi7v9nmdXfLCa?dl=0).
 
-You can reproduce the experiment results using `./reproduce.py` script we provided. It takes two steps:
+Then, you can reproduce the experiment results using the 'reproduce.py` script we provided. It takes two steps:
 
 **Step 1**
 
-Put all the C source files to be tested in a directory.
+Put all the C source files to be tested in a directory. For instance, to test RetDec, downloading the corresponding folder from Dropbox will result into the following folder structure:
+
+    ➜  ~ tree retdec_folder
+    retdec_folder
+    ├── cmisth_files
+    │   ├── error
+    │   └── result
+    └── emi_files
+        ├── error
+        └── result
+
+Our current results are put inside “error” and “result” subfolders. So before testing, consider removing those four subfolders.
+
 
 **Step 2**
 
 Run `./reproduce.py` like:
 
-    python3 ./reproduce.py --decompiler <decompiler name> --files_dir <directory to C files> --emi_dir <directory to store generated EMI variants> --EMI
-
-Or
-
     python3 ./reproduce.py --decompiler <decompiler name> --files_dir <directory to C files>
 
-There are four options for this `--decompiler` parameter: retdec, r2, jeb and ida. The `--EMI` parameter represents enable generating EMI variants.
+For instance, 
 
-For example:
+    python3 ./reproduce.py --decompiler retdec --files_dir retdec_folder/emi_files
 
-    python3 ./reproduce.py --decompiler retdec --files_dir ./seed_for_retdec
-    python3 ./reproduce.py --decompiler r2 --files_dir ./seed_for_r2 --emi_dir ./seed_for_r2/emi --EMI
+And
+ 
+     python3 ./reproduce.py --decompiler retdec --files_dir retdec_folder/csmith_files
 
+
+Indeed, `reproduce.py` is designed such that when users want to test our four decompilers, then can specify the `--decompiler` parameter with: `retdec`, `r2`, `jeb` or `ida`. Also, in addition to directly taking EMI or CSmith generated C files as the inputs, `reproduce.py` also provides another option `--EMI` to enable the generation of new EMI variants along the testing. For example:
+
+    python3 ./reproduce.py --decompiler r2 --files_dir ./radare2_folder/csmith_files --emi_dir ./new_seed_for_radare2/emi --EMI
+
+Where `--emi_dir` accompanies `--EMI` to specify the output directory of newly generated EMI variants.
 
 ### 4.5. Interpret Result
 
-For example, if a C file `./10.c` is to be tested, it will be compiled first:
+As noted in our paper, suppose a C file `10.c` is to be tested, it will be compiled first:
 
-    ./10.c ==compile==> ./10
+    10.c == compile ==> 10
 
-Then the executable `./10` will be decompiled by corresponding decompiler:
+Then the executable `10` will be decompiled by corresponding decompiler:
 
-    ./10 ==decompile==> ./10_retdec.c or ./10_r2.c
+    10 == decompile ==> 10_retdec.c or 10_r2.c
 
-We try to generate a new compilable file by replacing `func_1` function in original `./10.c` with code in `./10_retdec.c` or `./10_r2.c`:
+We try to generate a new compilable file by replacing `func_1` function in `10.c` with code in `10_retdec.c` or `10_r2.c`:
 
-    ./10_retdec.c or ./10_r2.c ==replace==> ./10_new.c ==recompile==> ./10_new
+    10_retdec.c or 10_r2.c == replace ==> 10_new.c == recompile ==> 10_new
 
-If recompilation is failed, the source code is stored in `./error/` and error information is logged in `./error/error_log.txt`.
+If recompilation is failed, the source code is stored in `error` folder and error information is logged in `error/error_log.txt`.
 
-Finally, we compare the outputs of `./10` and `./10_new`, if it turns out differently, this file will be store in `./result/` and logged in `./result/result_log.txt`.
+Finally, we compare the outputs of `10` and `10_new`, if they yield different outputs, it will be stored in `result` and logged in `result/result_log.txt`.
+
+
+
+
